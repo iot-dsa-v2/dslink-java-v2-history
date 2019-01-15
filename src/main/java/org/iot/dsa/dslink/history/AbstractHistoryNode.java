@@ -1,8 +1,14 @@
 package org.iot.dsa.dslink.history;
 
+import java.util.Collection;
+import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSNode;
+import org.iot.dsa.util.DSEnabledNode;
 
-public class AbstractHistoryNode extends DSEnabledNode implements HistoryContants, HistoryPurge {
+/**
+ *
+ */
+public class AbstractHistoryNode extends DSEnabledNode implements HistoryConstants, HistoryNode {
 
     ///////////////////////////////////////////////////////////////////////////
     // Class Fields
@@ -21,13 +27,39 @@ public class AbstractHistoryNode extends DSEnabledNode implements HistoryContant
     ///////////////////////////////////////////////////////////////////////////
 
     @Override
-    public void purge(long start, long end) {
-        HistoryUtils.getProvider(getInfo()).purge(this, start, end);
+    public DSInfo getVirtualAction(DSInfo target, String name) {
+        if (target.get() == this) {
+            if (PURGE.equals(name)) {
+                return actionInfo(PURGE, HistoryUtils.purge);
+            }
+        }
+        return super.getVirtualAction(target, name);
+    }
+
+    @Override
+    public void getVirtualActions(DSInfo target, Collection<String> names) {
+        super.getVirtualActions(target, names);
+        names.add(PURGE);
     }
 
     @Override
     public DSNode toNode() {
-        return null;
+        return this;
+    }
+
+    /**
+     * Cascades the call down the tree.
+     *
+     * @param force Overwrite an existing alias to another node.
+     */
+    public void writeAliases(boolean force) {
+        DSInfo info = getFirstNodeInfo();
+        while (info != null) {
+            if (info.is(AbstractHistoryNode.class)) {
+                ((AbstractHistoryNode) info.get()).writeAliases(force);
+            }
+            info = info.nextNode();
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////

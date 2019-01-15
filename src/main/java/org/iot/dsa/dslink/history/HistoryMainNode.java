@@ -1,6 +1,7 @@
 package org.iot.dsa.dslink.history;
 
 import java.util.Collection;
+import org.iot.dsa.DSRuntime;
 import org.iot.dsa.dslink.DSMainNode;
 import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSNode;
@@ -14,7 +15,7 @@ import org.iot.dsa.node.action.DSAction;
  *
  * @author Aaron Hansen
  */
-public abstract class HistoryMainNode extends DSMainNode {
+public abstract class HistoryMainNode extends DSMainNode implements HistoryConstants {
 
     ///////////////////////////////////////////////////////////////////////////
     // Class Fields
@@ -27,6 +28,8 @@ public abstract class HistoryMainNode extends DSMainNode {
     // Instance Fields
     ///////////////////////////////////////////////////////////////////////////
 
+    private DSRuntime.Timer houseKeepingTimer;
+
     ///////////////////////////////////////////////////////////////////////////
     // Constructors
     ///////////////////////////////////////////////////////////////////////////
@@ -36,33 +39,75 @@ public abstract class HistoryMainNode extends DSMainNode {
     ///////////////////////////////////////////////////////////////////////////
 
     @Override
-    public DSInfo getDynamicAction(DSInfo target, String name) {
+    public DSInfo getVirtualAction(DSInfo target, String name) {
         if (target.get() == this) {
             if (NEW_DATABASE.equals(name)) {
                 return makeNewDatabaseAction();
             }
         }
-        return super.getDynamicAction(target, name);
+        return super.getVirtualAction(target, name);
     }
 
     @Override
-    public void getDynamicActions(DSInfo target, Collection<String> bucket) {
+    public void getVirtualActions(DSInfo target, Collection<String> bucket) {
         if (target.get() == this) {
             bucket.add(NEW_DATABASE);
         }
-        super.getDynamicActions(target, bucket);
+        super.getVirtualActions(target, bucket);
     }
 
     ///////////////////////////////////////////////////////////////////////////
     // Protected Methods
     ///////////////////////////////////////////////////////////////////////////
 
+    /**
+     * First initializes all histories, then runs the housekeeping loop.
+     */
+    protected void doHousekeeping() {
+        init(this);
+        doHousekeeping(this);
+    }
+
+    protected void doHousekeeping(DSNode node) {
+        HistoryNode hnode;
+        while (isRunning()) {
+            DSInfo info = getFirstInfo(HistoryNode.class);
+            while (info != null) {
+                hnode = (HistoryNode) info.get();
+                hnode.houseKeeping();
+                doHousekeeping(info.getNode());
+                Thread.yield();
+                info = info.next(HistoryNode.class);
+            }
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException x) {
+                debug(getPath(), x);
+            }
+        }
+    }
+
     protected abstract HistoryProvider getProvider();
+
+    /**
+     * Scans the subtree and calls init on histories.
+     */
+    protected void init(DSNode node) {
+        if (node instanceof History) {
+            History h = (History) node;
+            h.init();
+            return;
+        }
+        DSInfo info = node.getFirstNodeInfo();
+        while (info != null) {
+            init(info.getNode());
+            info = info.nextNode();
+        }
+    }
 
     /**
      * Override point.  By default this creates an action with a single name parameter and
      * uses getProvider().makeDatabaseNode(actionParameters).
-     * @return
      */
     protected DSInfo makeNewDatabaseAction() {
         DSInfo ret = actionInfo(NEW_DATABASE, new DSAction.Parameterless() {
@@ -81,5 +126,25 @@ public abstract class HistoryMainNode extends DSMainNode {
         ret.getMetadata().setActionGroup(DSAction.NEW_GROUP, null);
         return ret;
     }
+
+    /**
+     * Asynchronously runs housekeeping.
+     */
+    @Override
+    protected void onStable() {
+        DSRuntime.run(() -> {
+            doHousekeeping();
+        });
+    }
+
+    @Override
+    protected void onStopped() {
+        if (houseKeepingTimer != null) {
+            houseKeepingTimer.cancel();
+            houseKeepingTimer = null;
+        }
+        super.onStopped();
+    }
+
 
 }

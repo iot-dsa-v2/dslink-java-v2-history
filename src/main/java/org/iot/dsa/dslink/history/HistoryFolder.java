@@ -27,26 +27,28 @@ public class HistoryFolder extends AbstractHistoryNode {
     ///////////////////////////////////////////////////////////////////////////
 
     @Override
-    public DSInfo getDynamicAction(DSInfo target, String name) {
-        DSInfo ret = null;
+    public DSInfo getVirtualAction(DSInfo target, String name) {
         if (target.get() == this) {
             switch (name) {
+                case APPLY_ALIASES:
+                    return actionInfo(APPLY_ALIASES, HistoryUtils.writeAliases);
                 case DELETE:
                     return actionInfo(DELETE, HistoryUtils.deleteNodeData);
                 case FOLDER:
                     return actionInfo(FOLDER, HistoryUtils.newHistoryFolder);
-                //case HISTORY:
-                    //return actionInfo(HISTORY, HistoryUtils.newHistory);
+                case HISTORY:
+                    return actionInfo(HISTORY, HistoryUtils.newHistory);
             }
         }
-        return ret;
+        return super.getVirtualAction(target, name);
     }
 
     @Override
-    public void getDynamicActions(DSInfo target, Collection<String> names) {
-        super.getDynamicActions(target, names);
+    public void getVirtualActions(DSInfo target, Collection<String> names) {
+        super.getVirtualActions(target, names);
         names.add(FOLDER);
         names.add(HISTORY);
+        names.add(APPLY_ALIASES);
     }
 
     ///////////////////////////////////////////////////////////////////////////

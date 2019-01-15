@@ -52,19 +52,22 @@ _Values_
 - Enabled - Can be used to disable trending and history queries.
 - Status - The health or condition of the link.
 - Status Text - Description for the current status.
-- State - State of the database connection.
+- State - State of the database connection: connecting, connected,
+  disconnecting or disconnected.
 - Last OK - Timestamp of last successful communication with the database.
 - Last Fail - Timestamp of last failed connection to the database.
 
 _Actions_
 
- - Edit Actions
+ - Apply Aliases - Put history aliases on subscribed points.
+    - Overwrite - overwrite an existing alias to another path.
+ - Edit
     - Delete - Delete the history group.
         - Node Only - Only remove the node from the tree.
         - Node and Data - Remove the node and all backing data.
     - Duplicate - Make a copy of the the database and its subtree.
     - Rename - Change the node name.
- - New Actions
+ - New
     - Group Folder - Add a folder for organizing history groups.
     - History Group - Add a new history group.
  - Purge - Removes records in the given time range from all histories.
@@ -79,14 +82,13 @@ _Values_
 - Enabled - Can be used to disable trending.
 - Status - The health or condition of the link.
 - Status Text - Description for the current status.
-- Interval - Set to collect on a regular interval.  0 disables and
-    this can be combined with COV.
-- COV - Set to true to enable change of value collection.  Use min
+- Interval - Set to collect on a regular interval. Can be combined with COV.
+- COV - Set to on to enable change of value collection.  Use min
     interval to throttle and max interval to ensure records get
     written with some regularity.
 - Min COV Interval - Regulates the minimum interval between records.
-- Max COV Interval - Ensures a record is written this amount of time after the
-    last record.
+- Max Records - The maximum number of records to maintain in each history.
+- Max Age - The oldest record to retain in each history.
 
 _Actions_
 
@@ -116,10 +118,13 @@ _Values_
 - Status - The health or condition of the link.
 - Status Text - Description for the current status.
 - Watch Path - Path to subscribe to.
-- Data Type - The type of the data source.  Set when the path is first
+- Watch Type - The type of the data source.  Set when the path is first
     set, but can be changed to override native format of the data source.
-- First Record - The earliest record in the history.
-- Last Record - The latest record in the history.
+- Watch Value - Current value of the watch path.
+- Watch Status - Current status of the watch path.
+- Watch Timestamp - Timestamp of the the watch value and status.
+- First Timestamp - The earliest record in the history.
+- Last Timestamp- The last record in the history.
 - Record Count - The total number of records in the history.
 - Timezone - Timezone of the data source.
 - Units - Units of the data source.

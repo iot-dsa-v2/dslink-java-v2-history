@@ -6,7 +6,7 @@ import org.iot.dsa.conn.DSConnection;
 import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSNode;
 
-public class HistoryDatabase extends DSConnection implements HistoryContants, HistoryPurge {
+public class HistoryDatabase extends DSConnection implements HistoryConstants, HistoryNode {
 
     ///////////////////////////////////////////////////////////////////////////
     // Class Fields
@@ -25,7 +25,7 @@ public class HistoryDatabase extends DSConnection implements HistoryContants, Hi
     ///////////////////////////////////////////////////////////////////////////
 
     @Override
-    public DSInfo getDynamicAction(DSInfo target, String name) {
+    public DSInfo getVirtualAction(DSInfo target, String name) {
         if (target.get() == this) {
             switch (name) {
                 case DELETE:
@@ -36,24 +36,19 @@ public class HistoryDatabase extends DSConnection implements HistoryContants, Hi
                     return actionInfo(HISTORY_GROUP, HistoryUtils.newHistoryGroup);
             }
         }
-        return super.getDynamicAction(target, name);
+        return super.getVirtualAction(target, name);
     }
 
     @Override
-    public void getDynamicActions(DSInfo target, Collection<String> names) {
-        super.getDynamicActions(target, names);
+    public void getVirtualActions(DSInfo target, Collection<String> names) {
+        super.getVirtualActions(target, names);
         names.add(HISTORY_GROUP);
         names.add(FOLDER);
     }
 
     @Override
-    public void purge(long start, long end) {
-        HistoryUtils.getProvider(getInfo()).purge(this, start, end);
-    }
-
-    @Override
     public DSNode toNode() {
-        return null;
+        return this;
     }
 
     ///////////////////////////////////////////////////////////////////////////
