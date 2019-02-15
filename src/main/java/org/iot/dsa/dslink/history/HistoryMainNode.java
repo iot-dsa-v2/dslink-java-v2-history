@@ -75,7 +75,6 @@ public abstract class HistoryMainNode extends DSMainNode implements HistoryConst
             while (info != null) {
                 hnode = (HistoryNode) info.get();
                 hnode.houseKeeping();
-                doHousekeeping(info.getNode());
                 Thread.yield();
                 info = info.next(HistoryNode.class);
             }

@@ -150,13 +150,14 @@ public abstract class HistoryProvider implements HistoryConstants {
      * Write the record.
      *
      * @param history   The history to write.
-     * @param type      The type to write.
      * @param timestamp The timestamp of the interval.
      * @param value     The value to write.
      * @param status    The status bits to write.
      */
-    public abstract void write(History history, DSElementType type, DSDateTime timestamp,
-                               DSElement value, DSStatus status);
+    public abstract void write(History history,
+                               DSDateTime timestamp,
+                               DSElement value,
+                               DSStatus status);
 
     ///////////////////////////////////////////////////////////////////////////
     // Protected Methods

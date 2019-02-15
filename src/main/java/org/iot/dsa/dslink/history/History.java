@@ -12,9 +12,10 @@ import org.iot.dsa.dslink.requester.ErrorType;
 import org.iot.dsa.dslink.requester.OutboundRequestHandler;
 import org.iot.dsa.dslink.requester.SimpleRequestHandler;
 import org.iot.dsa.node.DSBool;
+import org.iot.dsa.node.DSBytes;
+import org.iot.dsa.node.DSDouble;
 import org.iot.dsa.node.DSElement;
 import org.iot.dsa.node.DSElementType;
-import org.iot.dsa.node.DSIObject;
 import org.iot.dsa.node.DSIValue;
 import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSInt;
@@ -31,16 +32,16 @@ import org.iot.dsa.node.action.ActionResult;
 import org.iot.dsa.node.action.ActionSpec;
 import org.iot.dsa.node.action.ActionTable;
 import org.iot.dsa.node.action.DSAction;
-import org.iot.dsa.node.event.DSIEvent;
+import org.iot.dsa.node.event.DSEvent;
 import org.iot.dsa.node.event.DSISubscriber;
 import org.iot.dsa.node.event.DSISubscription;
-import org.iot.dsa.node.event.DSITopic;
 import org.iot.dsa.rollup.DSRollup;
 import org.iot.dsa.table.DSDeltaTrend;
 import org.iot.dsa.table.DSITrend;
 import org.iot.dsa.time.DSDateTime;
 import org.iot.dsa.time.DSTime;
 import org.iot.dsa.time.DSTimeRange;
+import org.iot.dsa.time.DSTimezone;
 import org.iot.dsa.util.DSException;
 
 public class History extends AbstractHistoryNode {
@@ -49,7 +50,11 @@ public class History extends AbstractHistoryNode {
     // Class Fields
     ///////////////////////////////////////////////////////////////////////////
 
+    public static final String NEW_RECORD = "NEW_RECORD";
+    public static final DSEvent NEW_RECORD_EVENT = new DSEvent(NEW_RECORD);
+
     private static final GetHistoryAction GET_HISTORY_ACTION = new GetHistoryAction();
+
     static final String GET_HISTORY = "getHistory";
     static final String GET_HISTORY_ALIAS = "@@getHistory";
     static final String INTERVAL = "Interval";
@@ -69,7 +74,6 @@ public class History extends AbstractHistoryNode {
     private HistoryProvider provider;
     private DSInfo recordCount = getInfo(RECORD_COUNT);
     private MySubscription subscription;
-    private DSInfo totalized = getInfo(TOTALIZED);
     private DSElementType type;
     private DSInfo watchSts = getInfo(WATCH_STATUS);
     private DSInfo watchTs = getInfo(WATCH_TS);
@@ -80,7 +84,10 @@ public class History extends AbstractHistoryNode {
     ///////////////////////////////////////////////////////////////////////////
 
     public DSDateTime getLastWrite() {
-        return null;
+        if (lastTs == null) {
+            return DSDateTime.NULL;
+        }
+        return lastTs;
     }
 
     public HistoryProvider getProvider() {
@@ -96,15 +103,13 @@ public class History extends AbstractHistoryNode {
 
     @Override
     public DSInfo getVirtualAction(DSInfo target, String name) {
-        if (target.get() == this) {
-            switch (name) {
-                case APPLY_ALIASES:
-                    return actionInfo(APPLY_ALIAS, HistoryUtils.writeAliases);
-                case DELETE:
-                    return actionInfo(DELETE, HistoryUtils.deleteNodeData);
-                case GET_HISTORY:
-                    return actionInfo(GET_HISTORY, GET_HISTORY_ACTION);
-            }
+        switch (name) {
+            case APPLY_ALIASES:
+                return actionInfo(APPLY_ALIAS, HistoryUtils.writeAliases);
+            case DELETE:
+                return actionInfo(DELETE, HistoryUtils.deleteNodeData);
+            case GET_HISTORY:
+                return actionInfo(GET_HISTORY, GET_HISTORY_ACTION);
         }
         return super.getVirtualAction(target, name);
     }
@@ -112,13 +117,15 @@ public class History extends AbstractHistoryNode {
     @Override
     public void getVirtualActions(DSInfo target, Collection<String> names) {
         super.getVirtualActions(target, names);
-        names.add(APPLY_ALIAS);
-        names.add(GET_HISTORY);
+        if (target.get() == this) {
+            names.add(APPLY_ALIAS);
+            names.add(GET_HISTORY);
+        }
     }
 
     @Override
     public void houseKeeping() {
-        if ((subscription == null) && isOperational()) {
+        if ((subscription == null) && isRunning() && isEnabled()) {
             subscribe();
         }
         DSInt maxRecords = getGroup().getMaxRecords();
@@ -150,7 +157,7 @@ public class History extends AbstractHistoryNode {
     }
 
     public boolean isTotalized() {
-        return totalized.getElement().toBoolean();
+        return getElement(TOTALIZED).toBoolean();
     }
 
     /**
@@ -193,8 +200,8 @@ public class History extends AbstractHistoryNode {
                 .setReadOnly(true);
         declareDefault(TOTALIZED, DSBool.FALSE,
                        "True means the value represents an accumulation (ever increasing slope)");
+        declareDefault(TIMEZONE, DSTimezone.DEFAULT, "Timezone of the data source.");
         //TODO UNITS
-        //TODO TIMEZONE
     }
 
     /**
@@ -203,7 +210,7 @@ public class History extends AbstractHistoryNode {
     protected String getGetHistoryPath() {
         StringBuilder buf = new StringBuilder();
         DSLink link = (DSLink) getAncestor(DSLink.class);
-        String myPath = link.getConnection().getPathInBroker(this);
+        String myPath = link.getPathInBroker(this);
         buf.setLength(0);
         return DSPath.concat(myPath, GET_HISTORY, buf).toString();
     }
@@ -310,7 +317,7 @@ public class History extends AbstractHistoryNode {
 
     protected void removeAlias() {
         final DSLink link = (DSLink) getAncestor(DSLink.class);
-        final DSIRequester requester = link.getConnection().getRequester();
+        final DSIRequester requester = link.getUpstream().getRequester();
         requester.list(getWatchPath(), new AbstractListHandler() {
             @Override
             public void onClose() {
@@ -348,7 +355,7 @@ public class History extends AbstractHistoryNode {
 
     protected void subscribe() {
         DSLink link = (DSLink) getAncestor(DSLink.class);
-        DSIRequester requester = link.getConnection().getRequester();
+        DSIRequester requester = link.getUpstream().getRequester();
         subscription = (MySubscription) requester
                 .subscribe(getWatchPath(), 0, new MySubscription());
     }
@@ -365,6 +372,9 @@ public class History extends AbstractHistoryNode {
      * should call super.
      */
     protected void write(DSDateTime ts, DSElement value, DSStatus status) {
+        if (!isEnabled()) {
+            return;
+        }
         if (type == null) {
             DSInfo info = getInfo(WATCH_TYPE);
             HistoryType htype = (HistoryType) info.get();
@@ -380,10 +390,34 @@ public class History extends AbstractHistoryNode {
             }
         }
         lastTs = ts;
-        provider.write(this, type, ts, value, status);
+        if (type != value.getElementType()) {
+            switch (type) {
+                case BOOLEAN:
+                    value = DSBool.NULL.valueOf(value);
+                    break;
+                case BYTES:
+                    value = DSBytes.NULL.valueOf(value);
+                    break;
+                case DOUBLE:
+                    value = DSDouble.NULL.valueOf(value);
+                    break;
+                //case LIST: //TODO
+                //value = DSList.NULL.valueOf(value);
+                //break;
+                case LONG:
+                    break;
+                //case MAP: //TODO
+                //value = DSMap.NULL.valueOf(value);
+                //break;
+                case STRING:
+                    value = DSString.NULL.valueOf(value);
+                    break;
+            }
+        }
+        provider.write(this, ts, value, status);
         put(LAST_TS, ts);
         put(RECORD_COUNT, DSLong.valueOf(recordCount.getElement().toLong() + 1));
-        fire(MyTopic.INSTANCE, null);
+        fire(NEW_RECORD_EVENT, null, null);
     }
 
     /**
@@ -393,7 +427,7 @@ public class History extends AbstractHistoryNode {
         String aliasPath = DSPath.concat(getWatchPath(), GET_HISTORY_ALIAS, null).toString();
         String getHistoryPath = getGetHistoryPath();
         DSLink link = (DSLink) getAncestor(DSLink.class);
-        DSIRequester requester = link.getConnection().getRequester();
+        DSIRequester requester = link.getUpstream().getRequester();
         requester.set(aliasPath, DSString.valueOf(getHistoryPath), new OutboundRequestHandler() {
             @Override
             public void onClose() {
@@ -411,7 +445,7 @@ public class History extends AbstractHistoryNode {
      */
     protected void writeAliasSafe() {
         DSLink link = (DSLink) getAncestor(DSLink.class);
-        DSIRequester requester = link.getConnection().getRequester();
+        DSIRequester requester = link.getUpstream().getRequester();
         requester.list(getWatchPath(), new AbstractListHandler() {
             boolean isSafe = true;
 
@@ -531,9 +565,7 @@ public class History extends AbstractHistoryNode {
             boolean ret = trend.next();
             if (ret == false) {
                 if (realTime) {
-                    subscription = history.subscribe(MyTopic.INSTANCE,
-                                                     null,
-                                                     this);
+                    subscription = history.subscribe(this, NEW_RECORD_EVENT, null);
                 } else {
                     DSRuntime.runDelayed(() -> request.close(), 1000);
                 }
@@ -550,7 +582,7 @@ public class History extends AbstractHistoryNode {
         }
 
         @Override
-        public void onEvent(DSNode node, DSInfo child, DSIEvent event) {
+        public void onEvent(DSEvent event, DSNode node, DSInfo child, DSIValue data) {
             request.send(new DSList().add(history.getLastWrite().toElement())
                                      .add(history.getWatchValue())
                                      .add(history.getWatchStatus().toElement()));
@@ -604,44 +636,14 @@ public class History extends AbstractHistoryNode {
                 put(watchSts, status);
                 writeCov(dateTime, value, status);
             } catch (Exception x) {
-                updateStatus(DSStatus.fault, DSException.makeMessage(x));
+                error(getPath(), x);
+                updateStatus(DSException.makeMessage(x));
             }
         }
 
         {
             lastTs = null;
         }
-    }
-
-    private static class MyTopic implements DSIEvent, DSITopic {
-
-        public static MyTopic INSTANCE = new MyTopic();
-
-        @Override
-        public DSIObject copy() {
-            return MyTopic.this;
-        }
-
-        @Override
-        public DSIValue getData() {
-            return null;
-        }
-
-        @Override
-        public DSITopic getTopic() {
-            return MyTopic.this;
-        }
-
-        @Override
-        public boolean isEqual(Object obj) {
-            return obj == this;
-        }
-
-        @Override
-        public boolean isNull() {
-            return false;
-        }
-
     }
 
 }

@@ -8,6 +8,7 @@ public interface HistoryConstants {
 
     public static final String APPLY_ALIAS = "Apply Alias";
     public static final String APPLY_ALIASES = "Apply Aliases";
+    public static final String COUNT = "Count";
     public static final String COV = "COV";
     public static final String DAYS = "Days";
     public static final String DELETE = DeleteAction.DELETE;

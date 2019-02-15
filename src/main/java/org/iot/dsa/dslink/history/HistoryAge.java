@@ -14,6 +14,7 @@ import org.iot.dsa.node.DSValueType;
 import org.iot.dsa.node.action.ActionInvocation;
 import org.iot.dsa.node.action.ActionResult;
 import org.iot.dsa.node.action.DSAction;
+import org.iot.dsa.node.action.DSISetAction;
 import org.iot.dsa.time.DSDateTime;
 import org.iot.dsa.time.DSTime;
 
@@ -23,7 +24,7 @@ import org.iot.dsa.time.DSTime;
  *
  * @author Aaron Hansen
  */
-public class HistoryAge extends DSValue implements HistoryConstants {
+public class HistoryAge extends DSValue implements DSISetAction, HistoryConstants {
 
     /////////////////////////////////////////////////////////////////
     // Class Fields
@@ -36,7 +37,6 @@ public class HistoryAge extends DSValue implements HistoryConstants {
     // Instance Fields
     /////////////////////////////////////////////////////////////////
 
-    public static DSAction editAction = new EditAction();
     private HistoryAgeMode mode;
     private DSString string;
 
@@ -115,6 +115,11 @@ public class HistoryAge extends DSValue implements HistoryConstants {
         return ret;
     }
 
+    @Override
+    public DSAction getSetAction() {
+        return SetAction.INSTANCE;
+    }
+
     /**
      * String.
      */
@@ -126,14 +131,6 @@ public class HistoryAge extends DSValue implements HistoryConstants {
     @Override
     public int hashCode() {
         return toString().hashCode();
-    }
-
-    /**
-     * Defaults to the equals method.
-     */
-    @Override
-    public boolean isEqual(Object obj) {
-        return equals(obj);
     }
 
     @Override
@@ -162,13 +159,15 @@ public class HistoryAge extends DSValue implements HistoryConstants {
             return string.toString();
         }
         if (this == NULL) {
-            return "null";
+            string = DSString.NULL;
+        } else {
+            StringBuilder buf = new StringBuilder();
+            buf.append(count);
+            buf.append(' ');
+            buf.append(mode.toString());
+            string = DSString.valueOf(buf.toString());
         }
-        StringBuilder buf = new StringBuilder();
-        buf.append(count);
-        buf.append(' ');
-        buf.append(mode.toString());
-        return buf.toString();
+        return string.toString();
     }
 
     @Override
@@ -214,11 +213,13 @@ public class HistoryAge extends DSValue implements HistoryConstants {
     // Inner Classes
     /////////////////////////////////////////////////////////////////
 
-    private static class EditAction extends DSAction implements HistoryConstants {
+    public static class SetAction extends DSAction {
+
+        public static final SetAction INSTANCE = new SetAction();
 
         @Override
         public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
-            int val = invocation.getParameters().getInt(VALUE);
+            int val = invocation.getParameters().getInt(COUNT);
             HistoryAgeMode mode = HistoryAgeMode
                     .valueFor(invocation.getParameters().getString(MODE));
             target.getParent().put(target, new HistoryAge(val, mode));
@@ -228,7 +229,7 @@ public class HistoryAge extends DSValue implements HistoryConstants {
         @Override
         public void prepareParameter(DSInfo target, DSMap parameter) {
             HistoryAge node = (HistoryAge) target.get();
-            if (parameter.get(DSMetadata.NAME).equals(VALUE)) {
+            if (parameter.get(DSMetadata.NAME).equals(COUNT)) {
                 parameter.put(DSMetadata.DEFAULT, node.count);
             } else {
                 parameter.put(DSMetadata.DEFAULT, node.mode.toElement());
@@ -236,8 +237,8 @@ public class HistoryAge extends DSValue implements HistoryConstants {
         }
 
         {
-            addParameter(VALUE, DSInt.NULL, "Interval count");
-            addParameter(MODE, HistoryAgeMode.OFF, "Interval units");
+            addParameter(COUNT, DSInt.NULL, null);
+            addParameter(MODE, HistoryAgeMode.OFF, "Units");
         }
     }
 

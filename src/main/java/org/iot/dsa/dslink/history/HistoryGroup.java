@@ -64,10 +64,6 @@ public class HistoryGroup extends AbstractHistoryNode {
                 case HISTORY:
                     return actionInfo(HISTORY, HistoryUtils.newHistory);
             }
-        } else if ((target == interval) || (target == minCovInterval)) {
-            return actionInfo(SET, HistoryInterval.editAction);
-        } else if (target == maxRecordAge) {
-            return actionInfo(SET, HistoryAge.editAction);
         }
         return super.getVirtualAction(target, name);
     }
@@ -79,8 +75,6 @@ public class HistoryGroup extends AbstractHistoryNode {
             names.add(APPLY_ALIASES);
             names.add(FOLDER);
             names.add(HISTORY);
-        } else if ((target == interval) || (target == minCovInterval) || (target == maxRecordAge)) {
-            names.add(SET);
         }
     }
 
@@ -115,16 +109,15 @@ public class HistoryGroup extends AbstractHistoryNode {
     @Override
     protected void declareDefaults() {
         super.declareDefaults();
-        declareDefault(INTERVAL, HistoryInterval.NULL, "Collect at a regular interval")
-                .setReadOnly(true);
+        declareDefault(INTERVAL, HistoryInterval.NULL, "Collect at a regular interval");
         declareDefault(COV, DSBool.FALSE, "Collect Changes Of Value")
                 .getMetadata().setBooleanRange(OFF, ON);
         declareDefault(MIN_COV_INTERVAL, HistoryInterval.valueOf("10 Seconds"),
-                       "Ignore changes of value that come too fast").setReadOnly(true);
+                       "Ignore changes of value that come too fast");
         declareDefault(MAX_RECORDS, DSInt.valueOf(0),
                        "If greater than zero, histories will be trimmed to this size");
-        declareDefault(MAX_RECORD_AGE, HistoryInterval.valueOf("Off"),
-                       "Records older than this will be periodically deleted").setReadOnly(true);
+        declareDefault(MAX_RECORD_AGE, HistoryAge.NULL,
+                       "Records older than this will be periodically deleted");
     }
 
     /**
@@ -161,7 +154,7 @@ public class HistoryGroup extends AbstractHistoryNode {
             timer.cancel();
             timer = null;
         }
-        if (!isOperational()) {
+        if (!isEnabled() || !isRunning()) {
             return;
         }
         HistoryInterval ivl = getInterval();
