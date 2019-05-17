@@ -181,8 +181,8 @@ public class InMemoryProvider extends HistoryProvider {
 
     private class InMemoryTrend implements DSITrend {
 
-        private History history;
         private HistoryRecord current;
+        private History history;
         private HistoryRecord next;
 
         public InMemoryTrend(History history, DSDateTime start) {

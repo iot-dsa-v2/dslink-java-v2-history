@@ -109,7 +109,7 @@ public abstract class HistoryMainNode extends DSMainNode implements HistoryConst
      * uses getProvider().makeDatabaseNode(actionParameters).
      */
     protected DSInfo makeNewDatabaseAction() {
-        DSInfo ret = actionInfo(NEW_DATABASE, new DSAction.Parameterless() {
+        DSInfo ret = virtualInfo(NEW_DATABASE, new DSAction.Parameterless() {
             @Override
             public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
                 String name = invocation.getParameters().getString(NAME);

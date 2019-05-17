@@ -6,7 +6,8 @@ import org.iot.dsa.conn.DSConnection;
 import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSNode;
 
-public abstract class HistoryDatabase extends DSConnection implements HistoryConstants, HistoryNode {
+public abstract class HistoryDatabase extends DSConnection implements HistoryConstants,
+        HistoryNode {
 
     ///////////////////////////////////////////////////////////////////////////
     // Public Methods
@@ -17,11 +18,11 @@ public abstract class HistoryDatabase extends DSConnection implements HistoryCon
         if (target.get() == this) {
             switch (name) {
                 case DELETE:
-                    return actionInfo(DELETE, HistoryUtils.deleteNodeData);
+                    return virtualInfo(DELETE, HistoryUtils.deleteNodeData);
                 case FOLDER:
-                    return actionInfo(FOLDER, HistoryUtils.newGroupFolder);
+                    return virtualInfo(FOLDER, HistoryUtils.newGroupFolder);
                 case HISTORY_GROUP:
-                    return actionInfo(HISTORY_GROUP, HistoryUtils.newHistoryGroup);
+                    return virtualInfo(HISTORY_GROUP, HistoryUtils.newHistoryGroup);
             }
         }
         return super.getVirtualAction(target, name);

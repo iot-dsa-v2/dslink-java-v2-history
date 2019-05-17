@@ -1,7 +1,6 @@
 package org.iot.dsa.dslink.history;
 
 import org.iot.dsa.node.DSElement;
-import org.iot.dsa.node.DSElementType;
 import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSMap;
 import org.iot.dsa.node.DSNode;

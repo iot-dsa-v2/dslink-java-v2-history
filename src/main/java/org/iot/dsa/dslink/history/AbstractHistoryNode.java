@@ -30,7 +30,7 @@ public class AbstractHistoryNode extends DSEnabledNode implements HistoryConstan
     public DSInfo getVirtualAction(DSInfo target, String name) {
         if (target.get() == this) {
             if (PURGE.equals(name)) {
-                return actionInfo(PURGE, HistoryUtils.purge);
+                return virtualInfo(PURGE, HistoryUtils.purge);
             }
         }
         return super.getVirtualAction(target, name);

@@ -25,16 +25,16 @@ public class InMemoryDatabase extends HistoryDatabase {
     ///////////////////////////////////////////////////////////////////////////
 
     @Override
+    protected void checkConfig() {
+    }
+
+    @Override
     protected void doConnect() {
         connOk();
     }
 
     @Override
     protected void doDisconnect() {
-    }
-
-    @Override
-    protected void checkConfig() {
     }
 
     @Override

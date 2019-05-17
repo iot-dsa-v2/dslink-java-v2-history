@@ -31,13 +31,13 @@ public class HistoryGroupFolder extends AbstractHistoryNode {
         if (target.get() == this) {
             switch (name) {
                 case APPLY_ALIASES:
-                    return actionInfo(APPLY_ALIASES, HistoryUtils.writeAliases);
+                    return virtualInfo(APPLY_ALIASES, HistoryUtils.writeAliases);
                 case DELETE:
-                    return actionInfo(DELETE, HistoryUtils.deleteNodeData);
+                    return virtualInfo(DELETE, HistoryUtils.deleteNodeData);
                 case FOLDER:
-                    return actionInfo(FOLDER, HistoryUtils.newGroupFolder);
+                    return virtualInfo(FOLDER, HistoryUtils.newGroupFolder);
                 case HISTORY_GROUP:
-                    return actionInfo(HISTORY_GROUP, HistoryUtils.newHistoryGroup);
+                    return virtualInfo(HISTORY_GROUP, HistoryUtils.newHistoryGroup);
             }
         }
         return super.getVirtualAction(target, name);

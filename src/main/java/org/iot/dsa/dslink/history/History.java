@@ -9,7 +9,6 @@ import org.iot.dsa.dslink.DSLink;
 import org.iot.dsa.dslink.requester.AbstractListHandler;
 import org.iot.dsa.dslink.requester.AbstractSubscribeHandler;
 import org.iot.dsa.dslink.requester.ErrorType;
-import org.iot.dsa.dslink.requester.OutboundRequestHandler;
 import org.iot.dsa.dslink.requester.SimpleRequestHandler;
 import org.iot.dsa.node.DSBool;
 import org.iot.dsa.node.DSBytes;
@@ -105,11 +104,11 @@ public class History extends AbstractHistoryNode {
     public DSInfo getVirtualAction(DSInfo target, String name) {
         switch (name) {
             case APPLY_ALIASES:
-                return actionInfo(APPLY_ALIAS, HistoryUtils.writeAliases);
+                return virtualInfo(APPLY_ALIAS, HistoryUtils.writeAliases);
             case DELETE:
-                return actionInfo(DELETE, HistoryUtils.deleteNodeData);
+                return virtualInfo(DELETE, HistoryUtils.deleteNodeData);
             case GET_HISTORY:
-                return actionInfo(GET_HISTORY, GET_HISTORY_ACTION);
+                return virtualInfo(GET_HISTORY, GET_HISTORY_ACTION);
         }
         return super.getVirtualAction(target, name);
     }
@@ -317,7 +316,7 @@ public class History extends AbstractHistoryNode {
 
     protected void removeAlias() {
         final DSLink link = (DSLink) getAncestor(DSLink.class);
-        final DSIRequester requester = link.getUpstream().getRequester();
+        final DSIRequester requester = link.getConnection().getRequester();
         requester.list(getWatchPath(), new AbstractListHandler() {
             @Override
             public void onClose() {
@@ -355,9 +354,9 @@ public class History extends AbstractHistoryNode {
 
     protected void subscribe() {
         DSLink link = (DSLink) getAncestor(DSLink.class);
-        DSIRequester requester = link.getUpstream().getRequester();
+        DSIRequester requester = link.getConnection().getRequester();
         subscription = (MySubscription) requester
-                .subscribe(getWatchPath(), 0, new MySubscription());
+                .subscribe(getWatchPath(), DSInt.valueOf(0), new MySubscription());
     }
 
     protected void unsubscribe() {
@@ -427,12 +426,8 @@ public class History extends AbstractHistoryNode {
         String aliasPath = DSPath.concat(getWatchPath(), GET_HISTORY_ALIAS, null).toString();
         String getHistoryPath = getGetHistoryPath();
         DSLink link = (DSLink) getAncestor(DSLink.class);
-        DSIRequester requester = link.getUpstream().getRequester();
-        requester.set(aliasPath, DSString.valueOf(getHistoryPath), new OutboundRequestHandler() {
-            @Override
-            public void onClose() {
-            }
-
+        DSIRequester requester = link.getConnection().getRequester();
+        requester.set(aliasPath, DSString.valueOf(getHistoryPath), new SimpleRequestHandler() {
             @Override
             public void onError(ErrorType type, String msg) {
                 error(String.format("%s %s %s", getGetHistoryPath(), type.name(), msg));
@@ -445,7 +440,7 @@ public class History extends AbstractHistoryNode {
      */
     protected void writeAliasSafe() {
         DSLink link = (DSLink) getAncestor(DSLink.class);
-        DSIRequester requester = link.getUpstream().getRequester();
+        DSIRequester requester = link.getConnection().getRequester();
         requester.list(getWatchPath(), new AbstractListHandler() {
             boolean isSafe = true;
 
