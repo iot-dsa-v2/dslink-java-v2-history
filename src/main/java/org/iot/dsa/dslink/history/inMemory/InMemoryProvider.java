@@ -61,6 +61,11 @@ public class InMemoryProvider extends HistoryProvider {
     }
 
     @Override
+    public void init(History history) {
+        histories.put(history, new HistoryImpl());
+    }
+
+    @Override
     public HistoryDatabase makeDatabaseNode(DSMap parameters) {
         return new InMemoryDatabase();
     }
@@ -144,7 +149,6 @@ public class InMemoryProvider extends HistoryProvider {
         void add(HistoryRecord rec) {
             if (head == null) {
                 head = tail = rec;
-                size = 1;
             } else {
                 tail.next = rec;
                 tail = rec;
@@ -208,7 +212,7 @@ public class InMemoryProvider extends HistoryProvider {
 
         @Override
         public int getColumnCount() {
-            return 0;
+            return 3;
         }
 
         @Override

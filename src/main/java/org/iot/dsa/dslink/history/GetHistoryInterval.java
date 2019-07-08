@@ -17,7 +17,6 @@ class GetHistoryInterval {
     private boolean alignSeconds;
     private boolean alignWeeks;
     private boolean alignYears;
-    private Calendar cache;
     private int days = -1;
     private int hours = -1;
     private int minutes = -1;

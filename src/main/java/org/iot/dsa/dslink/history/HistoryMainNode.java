@@ -61,14 +61,9 @@ public abstract class HistoryMainNode extends DSMainNode implements HistoryConst
     ///////////////////////////////////////////////////////////////////////////
 
     /**
-     * First initializes all histories, then runs the housekeeping loop.
+     * Continuously scans the entire tree and calls houseKeeping on all HistoryNodes.
      */
     protected void doHousekeeping() {
-        init(this);
-        doHousekeeping(this);
-    }
-
-    protected void doHousekeeping(DSNode node) {
         HistoryNode hnode;
         while (isRunning()) {
             DSInfo info = getFirstInfo(HistoryNode.class);
@@ -87,22 +82,6 @@ public abstract class HistoryMainNode extends DSMainNode implements HistoryConst
     }
 
     protected abstract HistoryProvider getProvider();
-
-    /**
-     * Scans the subtree and calls init on histories.
-     */
-    protected void init(DSNode node) {
-        if (node instanceof History) {
-            History h = (History) node;
-            h.init();
-            return;
-        }
-        DSInfo info = node.getFirstNodeInfo();
-        while (info != null) {
-            init(info.getNode());
-            info = info.nextNode();
-        }
-    }
 
     /**
      * Override point.  By default this creates an action with a single name parameter and
@@ -131,6 +110,7 @@ public abstract class HistoryMainNode extends DSMainNode implements HistoryConst
      */
     @Override
     protected void onStable() {
+        super.onStable();
         DSRuntime.run(() -> {
             doHousekeeping();
         });

@@ -54,7 +54,7 @@ public abstract class HistoryProvider implements HistoryConstants {
      * @param start   Used to determine the earliest record of the trend.
      */
     public DSITrend getTrendCov(History history, DSDateTime start) {
-        return new CovStartTrend(getTrendCov(history, start.prevDay()), start);
+        return new CovStartTrend(getTrend(history, start.prevDay()), start);
     }
 
     /**

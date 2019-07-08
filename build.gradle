@@ -1,7 +1,7 @@
 import groovy.json.JsonSlurper
 
 apply plugin: 'application'
-apply plugin: 'java'
+apply plugin: 'java-library'
 
 group 'org.iot-dsa'
 mainClassName = 'org.iot.dsa.dslink.DSLink'
@@ -23,16 +23,20 @@ repositories {
 }
 
 dependencies {
-    //implementation 'org.iot-dsa:dslink-v2-websocket:+' //for a locally installed sdk
-    implementation 'com.github.iot-dsa-v2.sdk-dslink-java-v2:dslink-v2-websocket:+'
+    api 'org.iot-dsa:dslink-v2-websocket:+' //for a locally installed sdk
+    //api 'com.github.iot-dsa-v2.sdk-dslink-java-v2:dslink-v2-websocket:+'
     testImplementation 'org.testng:testng:6+'
 }
 
-applicationDistribution.from(new File(project.projectDir, "/dslink.json"))
-
-javadoc {
-    exclude("**/com/**")
+jar {
+    manifest {
+        attributes(
+                'Automatic-Module-Name' : 'org.iot.dsa.' + project.name.replaceAll('-','.')
+        )
+    }
 }
+
+applicationDistribution.from(new File(project.projectDir, "/dslink.json"))
 
 run {
     args System.getProperty("exec.args", "").split()
@@ -44,9 +48,5 @@ test {
 }
 
 wrapper {
-    gradleVersion = '5.3'
-}
-
-configurations.all {
-    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    gradleVersion = '5.4.1'
 }

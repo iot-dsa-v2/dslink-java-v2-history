@@ -12,7 +12,6 @@ public interface HistoryConstants {
     public static final String COV = "COV";
     public static final String DAYS = "Days";
     public static final String DELETE = DeleteAction.DELETE;
-    public static final String ENABLED = "Enabled";
     public static final String FIRST_TS = "First Timestamp";
     public static final String FOLDER = "Folder";
     public static final String FORCE_OVERWRITE = "Force Overwrite";

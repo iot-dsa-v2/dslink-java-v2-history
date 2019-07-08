@@ -43,6 +43,18 @@ public class AbstractHistoryNode extends DSEnabledNode implements HistoryConstan
     }
 
     @Override
+    public void houseKeeping() {
+        HistoryNode node;
+        DSInfo info = getFirstInfo(HistoryNode.class);
+        while (info != null) {
+            node = (HistoryNode) info.get();
+            node.houseKeeping();
+            Thread.yield();
+            info = info.next(HistoryNode.class);
+        }
+    }
+
+    @Override
     public DSNode toNode() {
         return this;
     }

@@ -72,7 +72,6 @@ class HistoryUtils implements HistoryConstants {
             History his = provider.makeHistoryNode(invocation.getParameters());
             his.setWatchPath(path);
             target.getNode().add(name, his);
-            his.init();
             return null;
         }
 

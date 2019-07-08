@@ -41,6 +41,7 @@ class GetHistoryIntervalTrend extends DSTrendWrapper {
     public GetHistoryIntervalTrend(DSITrend trend,
                                    GetHistoryInterval interval,
                                    DSRollup rollup,
+                                   boolean cov,
                                    TimeZone timeZone) {
         super(trend);
         calendar = DSTime.getCalendar();
@@ -50,6 +51,7 @@ class GetHistoryIntervalTrend extends DSTrendWrapper {
         this.trend = trend;
         this.interval = interval;
         this.rollup = rollup.getFunction();
+        this.cov = cov;
         if (trend.next()) {
             nextTs = trend.getTimestamp();
             this.rollup.update(trend.getValue(), trend.getStatus());
@@ -106,15 +108,6 @@ class GetHistoryIntervalTrend extends DSTrendWrapper {
             }
         }
         return true;
-    }
-
-    /**
-     * When true, missing rows are interpolated using the last value (false by default).  This
-     * must be called before the first call to next().
-     */
-    public GetHistoryIntervalTrend setCov(boolean arg) {
-        cov = arg;
-        return this;
     }
 
 }

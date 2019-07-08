@@ -1,7 +1,6 @@
 package org.iot.dsa.dslink.history;
 
 import java.util.Collection;
-import org.iot.dsa.DSRuntime;
 import org.iot.dsa.conn.DSConnection;
 import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSNode;
@@ -36,6 +35,18 @@ public abstract class HistoryDatabase extends DSConnection implements HistoryCon
     }
 
     @Override
+    public void houseKeeping() {
+        HistoryNode node;
+        DSInfo info = getFirstInfo(HistoryNode.class);
+        while (info != null) {
+            node = (HistoryNode) info.get();
+            node.houseKeeping();
+            Thread.yield();
+            info = info.next(HistoryNode.class);
+        }
+    }
+
+    @Override
     public DSNode toNode() {
         return this;
     }
@@ -43,14 +54,5 @@ public abstract class HistoryDatabase extends DSConnection implements HistoryCon
     ///////////////////////////////////////////////////////////////////////////
     // Protected Methods
     ///////////////////////////////////////////////////////////////////////////
-
-    /**
-     * Has DSRuntime execute the inherited run method.
-     */
-    @Override
-    protected void onStable() {
-        DSRuntime.run(this);
-        super.onStable();
-    }
 
 }

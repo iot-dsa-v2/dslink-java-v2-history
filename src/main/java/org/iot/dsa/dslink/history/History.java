@@ -6,6 +6,7 @@ import java.util.TimeZone;
 import org.iot.dsa.DSRuntime;
 import org.iot.dsa.dslink.DSIRequester;
 import org.iot.dsa.dslink.DSLink;
+import org.iot.dsa.dslink.DSLinkConnection;
 import org.iot.dsa.dslink.requester.AbstractListHandler;
 import org.iot.dsa.dslink.requester.AbstractSubscribeHandler;
 import org.iot.dsa.dslink.requester.ErrorType;
@@ -68,6 +69,7 @@ public class History extends AbstractHistoryNode {
     // Instance Fields
     ///////////////////////////////////////////////////////////////////////////
 
+    private DSDateTime firstTs;
     private HistoryGroup group;
     private DSDateTime lastTs;
     private HistoryProvider provider;
@@ -103,7 +105,7 @@ public class History extends AbstractHistoryNode {
     @Override
     public DSInfo getVirtualAction(DSInfo target, String name) {
         switch (name) {
-            case APPLY_ALIASES:
+            case APPLY_ALIAS:
                 return virtualInfo(APPLY_ALIAS, HistoryUtils.writeAliases);
             case DELETE:
                 return virtualInfo(DELETE, HistoryUtils.deleteNodeData);
@@ -124,34 +126,44 @@ public class History extends AbstractHistoryNode {
 
     @Override
     public void houseKeeping() {
-        if ((subscription == null) && isRunning() && isEnabled()) {
-            subscribe();
-        }
-        DSInt maxRecords = getGroup().getMaxRecords();
-        if (maxRecords.toInt() > 0) {
-            int max = maxRecords.toInt();
-            int count = getElement(RECORD_COUNT).toInt();
-            if (count > max) {
-                DSDateTime first = getProvider().purge(this, (count - max));
-                put(RECORD_COUNT, maxRecords);
-                if (first != null) {
-                    put(FIRST_TS, first);
-                }
+        try {
+            if ((subscription == null) && isRunning() && isEnabled()) {
+                subscribe();
             }
-        }
-        HistoryAge historyAge = getGroup().getMaxRecordAge();
-        if (!historyAge.isOff()) {
-            DSDateTime first = (DSDateTime) get(FIRST_TS);
-            if (!first.isNull()) {
-                DSDateTime oldest = historyAge.fromNow(getTimeZone());
-                if (oldest.isAfter(first)) {
-                    first = getProvider().purge(this, DSTimeRange.valueOf(DSDateTime.NULL, oldest));
+            boolean modified = false;
+            int max = getGroup().getMaxRecords().toInt();
+            if (max > 0) {
+                int count = getElement(RECORD_COUNT).toInt();
+                if (count > max) {
+                    modified = true;
+                    DSDateTime first = getProvider().purge(this, (count - max));
                     if (first != null) {
+                        firstTs = first;
                         put(FIRST_TS, first);
                     }
-                    put(RECORD_COUNT, getProvider().getRecordCount(this));
                 }
             }
+            HistoryAge historyAge = getGroup().getMaxRecordAge();
+            if (!historyAge.isOff()) {
+                DSDateTime first = (DSDateTime) get(FIRST_TS);
+                if (!first.isNull()) {
+                    DSDateTime oldest = historyAge.fromNow(getTimeZone());
+                    if (oldest.isAfter(first)) {
+                        modified = true;
+                        first = getProvider().purge(this,
+                                                    DSTimeRange.valueOf(DSDateTime.NULL, oldest));
+                        if (first != null) {
+                            firstTs = first;
+                            put(FIRST_TS, first);
+                        }
+                    }
+                }
+            }
+            if (modified && isSubscribed()) {
+                put(RECORD_COUNT, getProvider().getRecordCount(this));
+            }
+        } catch (Exception x) {
+            error("",x);
         }
     }
 
@@ -207,11 +219,9 @@ public class History extends AbstractHistoryNode {
      * The path to the getHistory action of this node.
      */
     protected String getGetHistoryPath() {
-        StringBuilder buf = new StringBuilder();
         DSLink link = (DSLink) getAncestor(DSLink.class);
         String myPath = link.getPathInBroker(this);
-        buf.setLength(0);
-        return DSPath.concat(myPath, GET_HISTORY, buf).toString();
+        return DSPath.concat(myPath, GET_HISTORY, null).toString();
     }
 
     protected HistoryGroup getGroup() {
@@ -260,7 +270,7 @@ public class History extends AbstractHistoryNode {
             if (delta || isTotalized()) {
                 trend = new DSDeltaTrend(trend);
             }
-            trend = new GetHistoryIntervalTrend(trend, interval, rollup, getTimeZone());
+            trend = new GetHistoryIntervalTrend(trend, interval, rollup, cov, getTimeZone());
         } else if (delta) {
             trend = new DSDeltaTrend(trend);
         }
@@ -272,21 +282,11 @@ public class History extends AbstractHistoryNode {
     }
 
     protected DSStatus getWatchStatus() {
-        return (DSStatus) watchVal.get();
+        return (DSStatus) watchSts.get();
     }
 
     protected DSElement getWatchValue() {
         return watchVal.getElement();
-    }
-
-    /**
-     * Updates the record count and first timestamp then subscribes to the watch path.
-     */
-    protected void init() {
-        getProvider().init(this);
-        put(FIRST_TS, getProvider().getFirstTimestamp(this));
-        put(RECORD_COUNT, getProvider().getRecordCount(this));
-        subscribe();
     }
 
     @Override
@@ -302,8 +302,29 @@ public class History extends AbstractHistoryNode {
     }
 
     @Override
+    protected void onRemoved() {
+        super.onRemoved();
+        removeAlias();
+    }
+
+    @Override
+    protected void onRenamed(String oldName) {
+        super.onRenamed(oldName);
+        String oldPath = DSPath.concat(getParent().getPath(), oldName, null).toString();
+        replaceAlias(oldPath);
+    }
+
+    @Override
+    protected void onStable() {
+        super.onStable();
+        updateFirstAndCount();
+        subscribe();
+    }
+
+    @Override
     protected void onStarted() {
         group = null;
+        getProvider().init(this);
         super.onStarted();
     }
 
@@ -312,6 +333,46 @@ public class History extends AbstractHistoryNode {
         lastTs = null;
         unsubscribe();
         super.onStopped();
+    }
+
+    protected void replaceAlias(final String oldPath) {
+        final DSLink link = (DSLink) getAncestor(DSLink.class);
+        final DSIRequester requester = link.getConnection().getRequester();
+        requester.list(getWatchPath(), new AbstractListHandler() {
+            @Override
+            public void onClose() {
+            }
+
+            @Override
+            public void onError(ErrorType type, String msg) {
+                error(String.format("%s %s %s", getPath(), type.name(), msg));
+            }
+
+            @Override
+            public void onInitialized() {
+                getStream().closeStream();
+            }
+
+            @Override
+            public void onRemove(String name) {
+            }
+
+            @Override
+            public void onUpdate(String name, DSElement value) {
+                if (name.equals(GET_HISTORY_ALIAS)) {
+                    final String path = getGetHistoryPath();
+                    if (value.isList()) {
+                        DSList list = value.toList();
+                        int idx = list.indexOf(oldPath);
+                        if (idx >= 0) {
+                            DSString dspath = DSString.valueOf(path);
+                            list.put(idx, DSString.valueOf(path));
+                            writeAlias(list);
+                        }
+                    }
+                }
+            }
+        });
     }
 
     protected void removeAlias() {
@@ -340,8 +401,16 @@ public class History extends AbstractHistoryNode {
             public void onUpdate(String name, DSElement value) {
                 if (name.equals(GET_HISTORY_ALIAS)) {
                     final String path = getGetHistoryPath();
-                    if (path.equals(value.toString())) {
-                        requester.remove(path, new SimpleRequestHandler());
+                    if (value.isList()) {
+                        DSList list = value.toList();
+                        DSString dspath = DSString.valueOf(path);
+                        if (list.remove(dspath)) {
+                            if (list.isEmpty()) {
+                                requester.remove(path, new SimpleRequestHandler());
+                            } else {
+                                writeAlias(list);
+                            }
+                        }
                     }
                 }
             }
@@ -354,9 +423,12 @@ public class History extends AbstractHistoryNode {
 
     protected void subscribe() {
         DSLink link = (DSLink) getAncestor(DSLink.class);
-        DSIRequester requester = link.getConnection().getRequester();
-        subscription = (MySubscription) requester
-                .subscribe(getWatchPath(), DSInt.valueOf(0), new MySubscription());
+        DSLinkConnection conn = link.getConnection();
+        if (conn.isConnected()) {
+            subscription = (MySubscription) conn.getRequester().subscribe(getWatchPath(),
+                                                                          DSInt.valueOf(0),
+                                                                          new MySubscription());
+        }
     }
 
     protected void unsubscribe() {
@@ -364,6 +436,12 @@ public class History extends AbstractHistoryNode {
             subscription.getStream().closeStream();
             subscription = null;
         }
+    }
+
+    protected void updateFirstAndCount() {
+        firstTs = getProvider().getFirstTimestamp(this);
+        put(FIRST_TS, firstTs);
+        put(RECORD_COUNT, getProvider().getRecordCount(this));
     }
 
     /**
@@ -415,6 +493,10 @@ public class History extends AbstractHistoryNode {
         }
         provider.write(this, ts, value, status);
         put(LAST_TS, ts);
+        if ((firstTs == null) || firstTs.isNull()) {
+            firstTs = ts;
+            put(FIRST_TS, ts);
+        }
         put(RECORD_COUNT, DSLong.valueOf(recordCount.getElement().toLong() + 1));
         fire(NEW_RECORD_EVENT, null, null);
     }
@@ -423,11 +505,17 @@ public class History extends AbstractHistoryNode {
      * Submits a set request to the requester.
      */
     protected void writeAlias() {
+        writeAlias(new DSList().add(getGetHistoryPath()));
+    }
+
+    /**
+     * Submits a set request to the requester.
+     */
+    protected void writeAlias(DSList pathList) {
         String aliasPath = DSPath.concat(getWatchPath(), GET_HISTORY_ALIAS, null).toString();
-        String getHistoryPath = getGetHistoryPath();
         DSLink link = (DSLink) getAncestor(DSLink.class);
         DSIRequester requester = link.getConnection().getRequester();
-        requester.set(aliasPath, DSString.valueOf(getHistoryPath), new SimpleRequestHandler() {
+        requester.set(aliasPath, pathList, new SimpleRequestHandler() {
             @Override
             public void onError(ErrorType type, String msg) {
                 error(String.format("%s %s %s", getGetHistoryPath(), type.name(), msg));
@@ -442,18 +530,18 @@ public class History extends AbstractHistoryNode {
         DSLink link = (DSLink) getAncestor(DSLink.class);
         DSIRequester requester = link.getConnection().getRequester();
         requester.list(getWatchPath(), new AbstractListHandler() {
-            boolean isSafe = true;
+            boolean safe = true;
 
             @Override
             public void onClose() {
-                if (isSafe) {
+                if (safe) {
                     writeAlias();
                 }
             }
 
             @Override
             public void onError(ErrorType type, String msg) {
-                isSafe = false;
+                safe = false;
                 error(String.format("%s %s %s", getPath(), type.name(), msg));
             }
 
@@ -469,7 +557,15 @@ public class History extends AbstractHistoryNode {
             @Override
             public void onUpdate(String name, DSElement value) {
                 if (name.equals(GET_HISTORY_ALIAS)) {
-                    isSafe = false;
+                    safe = false;
+                    String path = getGetHistoryPath();
+                    if (value.isList()) {
+                        DSList list = value.toList();
+                        DSString dspath = DSString.valueOf(path);
+                        if (!list.contains(dspath)) {
+                            writeAlias(list.add(dspath));
+                        }
+                    }
                 }
             }
         });
@@ -479,7 +575,7 @@ public class History extends AbstractHistoryNode {
      * Only calls write if the group is cov or if the start status flag needs to be written.
      */
     protected void writeCov(DSDateTime ts, DSElement val, DSStatus status) {
-        if (lastTs == null) {
+        if ((lastTs == null) && status.isGood()) {
             status = status.add(DSStatus.START);
         } else if (!getGroup().canWriteCov(History.this)) {
             return;
@@ -505,11 +601,11 @@ public class History extends AbstractHistoryNode {
      * it does not have a current value.
      */
     protected void writeStart() {
-        if (lastTs == null) {
+        if ((lastTs == null) || getGroup().isCov()) {
             return;
         }
         DSStatus status = getWatchStatus().add(DSStatus.START);
-        write(DSDateTime.currentTime(), getWatchValue(), status);
+        write(DSDateTime.now(), getWatchValue(), status);
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -600,7 +696,7 @@ public class History extends AbstractHistoryNode {
         }
 
         {
-            addParameter(TIMERANGE, DSString.NULL, null);
+            addParameter(TIMERANGE, DSTimeRange.NULL, null);
             addDefaultParameter(INTERVAL, DSString.valueOf("none"), null);
             addDefaultParameter(ROLLUP, DSRollup.FIRST, null);
             addDefaultParameter(REAL_TIME, DSBool.FALSE, null);
