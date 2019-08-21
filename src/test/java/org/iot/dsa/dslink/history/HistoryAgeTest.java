@@ -1,7 +1,7 @@
 package org.iot.dsa.dslink.history;
 
 import java.util.Calendar;
-import org.iot.dsa.time.DSTime;
+import org.iot.dsa.time.Time;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -14,11 +14,11 @@ public class HistoryAgeTest {
         Assert.assertEquals(ivl, tmp);
         Assert.assertEquals(ivl.toString(), tmp.toString());
         long now = System.currentTimeMillis();
-        Calendar ivlCal = DSTime.getCalendar(now);
+        Calendar ivlCal = Time.getCalendar(now);
         ivl.apply(ivlCal);
-        Calendar calTest = DSTime.getCalendar(now);
+        Calendar calTest = Time.getCalendar(now);
         calTest.setTimeInMillis(now);
-        DSTime.addDays(-5, calTest);
+        Time.addDays(-5, calTest);
         Assert.assertEquals(ivlCal, calTest);
     }
 
@@ -29,11 +29,11 @@ public class HistoryAgeTest {
         Assert.assertEquals(ivl, tmp);
         Assert.assertEquals(ivl.toString(), tmp.toString());
         long now = System.currentTimeMillis();
-        Calendar ivlCal = DSTime.getCalendar(now);
+        Calendar ivlCal = Time.getCalendar(now);
         ivl.apply(ivlCal);
-        Calendar calTest = DSTime.getCalendar(now);
+        Calendar calTest = Time.getCalendar(now);
         calTest.setTimeInMillis(now);
-        DSTime.addHours(-5, calTest);
+        Time.addHours(-5, calTest);
         Assert.assertEquals(ivlCal, calTest);
     }
 
@@ -44,11 +44,11 @@ public class HistoryAgeTest {
         Assert.assertEquals(ivl, tmp);
         Assert.assertEquals(ivl.toString(), tmp.toString());
         long now = System.currentTimeMillis();
-        Calendar ivlCal = DSTime.getCalendar(now);
+        Calendar ivlCal = Time.getCalendar(now);
         ivl.apply(ivlCal);
-        Calendar calTest = DSTime.getCalendar(now);
+        Calendar calTest = Time.getCalendar(now);
         calTest.setTimeInMillis(now);
-        DSTime.addMinutes(-5, calTest);
+        Time.addMinutes(-5, calTest);
         Assert.assertEquals(ivlCal, calTest);
     }
 
@@ -59,11 +59,11 @@ public class HistoryAgeTest {
         Assert.assertEquals(ivl, tmp);
         Assert.assertEquals(ivl.toString(), tmp.toString());
         long now = System.currentTimeMillis();
-        Calendar ivlCal = DSTime.getCalendar(now);
+        Calendar ivlCal = Time.getCalendar(now);
         ivl.apply(ivlCal);
-        Calendar calTest = DSTime.getCalendar(now);
+        Calendar calTest = Time.getCalendar(now);
         calTest.setTimeInMillis(now);
-        DSTime.addMonths(-5, calTest);
+        Time.addMonths(-5, calTest);
         Assert.assertEquals(ivlCal, calTest);
     }
 
@@ -80,11 +80,11 @@ public class HistoryAgeTest {
         Assert.assertEquals(ivl, tmp);
         Assert.assertEquals(ivl.toString(), tmp.toString());
         long now = System.currentTimeMillis();
-        Calendar ivlCal = DSTime.getCalendar(now);
+        Calendar ivlCal = Time.getCalendar(now);
         ivl.apply(ivlCal);
-        Calendar calTest = DSTime.getCalendar(now);
+        Calendar calTest = Time.getCalendar(now);
         calTest.setTimeInMillis(now);
-        DSTime.addWeeks(-5, calTest);
+        Time.addWeeks(-5, calTest);
         Assert.assertEquals(ivlCal, calTest);
     }
 

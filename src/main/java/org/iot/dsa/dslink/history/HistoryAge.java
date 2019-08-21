@@ -16,7 +16,7 @@ import org.iot.dsa.node.action.ActionResult;
 import org.iot.dsa.node.action.DSAction;
 import org.iot.dsa.node.action.DSISetAction;
 import org.iot.dsa.time.DSDateTime;
-import org.iot.dsa.time.DSTime;
+import org.iot.dsa.time.Time;
 
 /**
  * XML Schema compliant relative amount of time represented as a number of years, months, days,
@@ -68,31 +68,22 @@ public class HistoryAge extends DSValue implements DSISetAction, HistoryConstant
         }
         switch (mode) {
             case MINUTES:
-                DSTime.addMinutes(count, cal);
+                Time.addMinutes(count, cal);
                 break;
             case HOURS:
-                DSTime.addHours(count, cal);
+                Time.addHours(count, cal);
                 break;
             case DAYS:
-                DSTime.addDays(count, cal);
+                Time.addDays(count, cal);
                 break;
             case WEEKS:
-                DSTime.addWeeks(count, cal);
+                Time.addWeeks(count, cal);
                 break;
             case MONTHS:
-                DSTime.addMonths(count, cal);
+                Time.addMonths(count, cal);
                 break;
         }
         return cal;
-    }
-
-    @Override
-    public HistoryAge copy() {
-        HistoryAge ret = new HistoryAge();
-        ret.count = count;
-        ret.mode = mode;
-        ret.string = string;
-        return ret;
     }
 
     @Override
@@ -108,10 +99,10 @@ public class HistoryAge extends DSValue implements DSISetAction, HistoryConstant
      * Applies the age to the current time.
      */
     public DSDateTime fromNow(TimeZone timeZone) {
-        Calendar cal = DSTime.getCalendar(System.currentTimeMillis(), timeZone);
+        Calendar cal = Time.getCalendar(System.currentTimeMillis(), timeZone);
         apply(cal);
         DSDateTime ret = DSDateTime.valueOf(cal);
-        DSTime.recycle(cal);
+        Time.recycle(cal);
         return ret;
     }
 

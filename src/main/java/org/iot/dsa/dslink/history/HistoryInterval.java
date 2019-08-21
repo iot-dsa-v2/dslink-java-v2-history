@@ -14,7 +14,7 @@ import org.iot.dsa.node.action.ActionInvocation;
 import org.iot.dsa.node.action.ActionResult;
 import org.iot.dsa.node.action.DSAction;
 import org.iot.dsa.node.action.DSISetAction;
-import org.iot.dsa.time.DSTime;
+import org.iot.dsa.time.Time;
 
 /**
  * XML Schema compliant relative amount of time represented as a number of years, months, days,
@@ -61,23 +61,23 @@ public class HistoryInterval extends DSValue implements DSISetAction, HistoryCon
         switch (mode) {
             case SECONDS:
                 if (count < 60) {
-                    DSTime.alignSeconds(count, cal);
+                    Time.alignSeconds(count, cal);
                 } else {
-                    DSTime.alignSecond(cal);
+                    Time.alignSecond(cal);
                 }
                 break;
             case MINUTES:
                 if (count < 60) {
-                    DSTime.alignMinutes(count, cal);
+                    Time.alignMinutes(count, cal);
                 } else {
-                    DSTime.alignMinute(cal);
+                    Time.alignMinute(cal);
                 }
                 break;
             case HOURS:
                 if (count < 24) {
-                    DSTime.alignHours(count, cal);
+                    Time.alignHours(count, cal);
                 } else {
-                    DSTime.alignHour(cal);
+                    Time.alignHour(cal);
                 }
                 break;
         }
@@ -90,28 +90,19 @@ public class HistoryInterval extends DSValue implements DSISetAction, HistoryCon
     public Calendar apply(Calendar cal) {
         switch (mode) {
             case MILLIS:
-                DSTime.addMillis(count, cal);
+                Time.addMillis(count, cal);
                 break;
             case SECONDS:
-                DSTime.addSeconds(count, cal);
+                Time.addSeconds(count, cal);
                 break;
             case MINUTES:
-                DSTime.addMinutes(count, cal);
+                Time.addMinutes(count, cal);
                 break;
             case HOURS:
-                DSTime.addHours(count, cal);
+                Time.addHours(count, cal);
                 break;
         }
         return cal;
-    }
-
-    @Override
-    public HistoryInterval copy() {
-        HistoryInterval ret = new HistoryInterval();
-        ret.count = count;
-        ret.mode = mode;
-        ret.string = string;
-        return ret;
     }
 
     @Override
@@ -168,10 +159,10 @@ public class HistoryInterval extends DSValue implements DSISetAction, HistoryCon
                 ms = 1000;
                 break;
             case MINUTES:
-                ms = DSTime.MILLIS_MINUTE;
+                ms = Time.MILLIS_MINUTE;
                 break;
             case HOURS:
-                ms = DSTime.MILLIS_HOUR;
+                ms = Time.MILLIS_HOUR;
                 break;
         }
         return count * ms;

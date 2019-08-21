@@ -1,7 +1,7 @@
 package org.iot.dsa.dslink.history;
 
 import java.util.Calendar;
-import org.iot.dsa.time.DSTime;
+import org.iot.dsa.time.Time;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -14,13 +14,13 @@ public class HistoryIntervalTest {
         Assert.assertEquals(ivl, tmp);
         Assert.assertEquals(ivl.toString(), tmp.toString());
         long now = System.currentTimeMillis();
-        Calendar ivlCal = DSTime.getCalendar(now);
+        Calendar ivlCal = Time.getCalendar(now);
         ivl.align(ivlCal);
         ivl.apply(ivlCal);
-        Calendar calTest = DSTime.getCalendar(now);
+        Calendar calTest = Time.getCalendar(now);
         calTest.setTimeInMillis(now);
-        DSTime.alignHours(5, calTest);
-        DSTime.addHours(5, calTest);
+        Time.alignHours(5, calTest);
+        Time.addHours(5, calTest);
         Assert.assertEquals(ivlCal, calTest);
     }
 
@@ -31,13 +31,13 @@ public class HistoryIntervalTest {
         Assert.assertEquals(ivl, tmp);
         Assert.assertEquals(ivl.toString(), tmp.toString());
         long now = System.currentTimeMillis();
-        Calendar ivlCal = DSTime.getCalendar(now);
+        Calendar ivlCal = Time.getCalendar(now);
         ivl.align(ivlCal);
         ivl.apply(ivlCal);
-        Calendar calTest = DSTime.getCalendar(now);
+        Calendar calTest = Time.getCalendar(now);
         calTest.setTimeInMillis(now);
-        DSTime.alignMinutes(5, calTest);
-        DSTime.addMinutes(5, calTest);
+        Time.alignMinutes(5, calTest);
+        Time.addMinutes(5, calTest);
         Assert.assertEquals(ivlCal, calTest);
     }
 
@@ -54,13 +54,13 @@ public class HistoryIntervalTest {
         Assert.assertEquals(ivl, tmp);
         Assert.assertEquals(ivl.toString(), tmp.toString());
         long now = System.currentTimeMillis();
-        Calendar ivlCal = DSTime.getCalendar(now);
+        Calendar ivlCal = Time.getCalendar(now);
         ivl.align(ivlCal);
         ivl.apply(ivlCal);
-        Calendar calTest = DSTime.getCalendar(now);
+        Calendar calTest = Time.getCalendar(now);
         calTest.setTimeInMillis(now);
-        DSTime.alignSeconds(5, calTest);
-        DSTime.addSeconds(5, calTest);
+        Time.alignSeconds(5, calTest);
+        Time.addSeconds(5, calTest);
         Assert.assertEquals(ivlCal, calTest);
     }
 

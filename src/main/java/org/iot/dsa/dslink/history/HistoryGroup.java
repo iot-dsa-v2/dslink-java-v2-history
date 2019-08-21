@@ -8,7 +8,7 @@ import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSInt;
 import org.iot.dsa.node.DSNode;
 import org.iot.dsa.time.DSDateTime;
-import org.iot.dsa.time.DSTime;
+import org.iot.dsa.time.Time;
 
 public class HistoryGroup extends AbstractHistoryNode {
 
@@ -97,10 +97,10 @@ public class HistoryGroup extends AbstractHistoryNode {
         }
         if (!getMinCovInterval().isOff()) {
             long now = System.currentTimeMillis();
-            Calendar cal = DSTime.getCalendar(history.getLastWrite().timeInMillis());
+            Calendar cal = Time.getCalendar(history.getLastWrite().timeInMillis());
             getMinCovInterval().apply(cal);
             long next = cal.getTimeInMillis();
-            DSTime.recycle(cal);
+            Time.recycle(cal);
             return next <= System.currentTimeMillis();
         }
         return true;
@@ -125,10 +125,10 @@ public class HistoryGroup extends AbstractHistoryNode {
      */
     protected void executeInterval() {
         long time = System.currentTimeMillis();
-        Calendar cal = DSTime.getCalendar(time);
+        Calendar cal = Time.getCalendar(time);
         getInterval().align(cal);
         time = cal.getTimeInMillis();
-        DSTime.recycle(cal);
+        Time.recycle(cal);
         collectInterval(DSDateTime.valueOf(time), this);
     }
 
@@ -162,12 +162,12 @@ public class HistoryGroup extends AbstractHistoryNode {
             return;
         }
         long now = System.currentTimeMillis();
-        Calendar cal = DSTime.getCalendar(now);
+        Calendar cal = Time.getCalendar(now);
         ivl.align(cal);
         ivl.apply(cal);
         long first = cal.getTimeInMillis();
         timer = DSRuntime.run(() -> executeInterval(), first, ivl.toMillis());
-        DSTime.recycle(cal);
+        Time.recycle(cal);
     }
 
     ///////////////////////////////////////////////////////////////////////////

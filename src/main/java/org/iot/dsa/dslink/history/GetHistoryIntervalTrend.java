@@ -7,7 +7,7 @@ import org.iot.dsa.rollup.DSRollup;
 import org.iot.dsa.rollup.RollupFunction;
 import org.iot.dsa.table.DSITrend;
 import org.iot.dsa.table.DSTrendWrapper;
-import org.iot.dsa.time.DSTime;
+import org.iot.dsa.time.Time;
 
 /**
  * Rolls up values in a series to intervals.  Do not use if the interval
@@ -44,7 +44,7 @@ class GetHistoryIntervalTrend extends DSTrendWrapper {
                                    boolean cov,
                                    TimeZone timeZone) {
         super(trend);
-        calendar = DSTime.getCalendar();
+        calendar = Time.getCalendar();
         if (timeZone != null) {
             calendar.setTimeZone(timeZone);
         }

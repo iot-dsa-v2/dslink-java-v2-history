@@ -39,9 +39,9 @@ import org.iot.dsa.rollup.DSRollup;
 import org.iot.dsa.table.DSDeltaTrend;
 import org.iot.dsa.table.DSITrend;
 import org.iot.dsa.time.DSDateTime;
-import org.iot.dsa.time.DSTime;
 import org.iot.dsa.time.DSTimeRange;
 import org.iot.dsa.time.DSTimezone;
+import org.iot.dsa.time.Time;
 import org.iot.dsa.util.DSException;
 
 public class History extends AbstractHistoryNode {
@@ -163,7 +163,7 @@ public class History extends AbstractHistoryNode {
                 put(RECORD_COUNT, getProvider().getRecordCount(this));
             }
         } catch (Exception x) {
-            error("",x);
+            error("", x);
         }
     }
 
@@ -253,7 +253,7 @@ public class History extends AbstractHistoryNode {
         GetHistoryInterval interval = GetHistoryInterval.valueOf(parameters.getString(INTERVAL));
         if (interval != null) {
             DSDateTime start = range.getStart();
-            Calendar cal = DSTime.getCalendar(start.timeInMillis(), getTimeZone());
+            Calendar cal = Time.getCalendar(start.timeInMillis(), getTimeZone());
             if (interval.align(cal)) {
                 start = DSDateTime.valueOf(cal);
                 range = DSTimeRange.valueOf(start, range.getTo());
@@ -335,46 +335,6 @@ public class History extends AbstractHistoryNode {
         super.onStopped();
     }
 
-    protected void replaceAlias(final String oldPath) {
-        final DSLink link = (DSLink) getAncestor(DSLink.class);
-        final DSIRequester requester = link.getConnection().getRequester();
-        requester.list(getWatchPath(), new AbstractListHandler() {
-            @Override
-            public void onClose() {
-            }
-
-            @Override
-            public void onError(ErrorType type, String msg) {
-                error(String.format("%s %s %s", getPath(), type.name(), msg));
-            }
-
-            @Override
-            public void onInitialized() {
-                getStream().closeStream();
-            }
-
-            @Override
-            public void onRemove(String name) {
-            }
-
-            @Override
-            public void onUpdate(String name, DSElement value) {
-                if (name.equals(GET_HISTORY_ALIAS)) {
-                    final String path = getGetHistoryPath();
-                    if (value.isList()) {
-                        DSList list = value.toList();
-                        int idx = list.indexOf(oldPath);
-                        if (idx >= 0) {
-                            DSString dspath = DSString.valueOf(path);
-                            list.put(idx, DSString.valueOf(path));
-                            writeAlias(list);
-                        }
-                    }
-                }
-            }
-        });
-    }
-
     protected void removeAlias() {
         final DSLink link = (DSLink) getAncestor(DSLink.class);
         final DSIRequester requester = link.getConnection().getRequester();
@@ -410,6 +370,46 @@ public class History extends AbstractHistoryNode {
                             } else {
                                 writeAlias(list);
                             }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    protected void replaceAlias(final String oldPath) {
+        final DSLink link = (DSLink) getAncestor(DSLink.class);
+        final DSIRequester requester = link.getConnection().getRequester();
+        requester.list(getWatchPath(), new AbstractListHandler() {
+            @Override
+            public void onClose() {
+            }
+
+            @Override
+            public void onError(ErrorType type, String msg) {
+                error(String.format("%s %s %s", getPath(), type.name(), msg));
+            }
+
+            @Override
+            public void onInitialized() {
+                getStream().closeStream();
+            }
+
+            @Override
+            public void onRemove(String name) {
+            }
+
+            @Override
+            public void onUpdate(String name, DSElement value) {
+                if (name.equals(GET_HISTORY_ALIAS)) {
+                    final String path = getGetHistoryPath();
+                    if (value.isList()) {
+                        DSList list = value.toList();
+                        int idx = list.indexOf(oldPath);
+                        if (idx >= 0) {
+                            DSString dspath = DSString.valueOf(path);
+                            list.put(idx, DSString.valueOf(path));
+                            writeAlias(list);
                         }
                     }
                 }

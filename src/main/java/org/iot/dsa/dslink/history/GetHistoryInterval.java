@@ -1,7 +1,7 @@
 package org.iot.dsa.dslink.history;
 
 import java.util.Calendar;
-import org.iot.dsa.time.DSTime;
+import org.iot.dsa.time.Time;
 
 /**
  * Interval used by the GetHistory action.
@@ -33,31 +33,31 @@ class GetHistoryInterval {
     public boolean align(Calendar calendar) {
         boolean modified = false;
         if (alignSeconds) {
-            DSTime.alignSeconds(seconds, calendar);
+            Time.alignSeconds(seconds, calendar);
             modified = true;
         }
         if (alignMinutes) {
-            DSTime.alignMinutes(minutes, calendar);
+            Time.alignMinutes(minutes, calendar);
             modified = true;
         }
         if (alignHours) {
-            DSTime.alignHour(calendar);
+            Time.alignHour(calendar);
             modified = true;
         }
         if (alignDays) {
-            DSTime.alignDay(calendar);
+            Time.alignDay(calendar);
             modified = true;
         }
         if (alignWeeks) {
-            DSTime.alignWeek(calendar);
+            Time.alignWeek(calendar);
             modified = true;
         }
         if (alignMonths) {
-            DSTime.alignMonth(calendar);
+            Time.alignMonth(calendar);
             modified = true;
         }
         if (alignYears) {
-            DSTime.alignYear(calendar);
+            Time.alignYear(calendar);
             modified = true;
         }
         return modified;
@@ -71,30 +71,30 @@ class GetHistoryInterval {
     public boolean next(Calendar calendar) {
         boolean modified = false;
         if (seconds > 0) {
-            DSTime.addSeconds(seconds, calendar);
+            Time.addSeconds(seconds, calendar);
             modified = true;
         }
         if (minutes > 0) {
-            DSTime.addMinutes(minutes, calendar);
+            Time.addMinutes(minutes, calendar);
         }
         if (hours > 0) {
-            DSTime.addHours(hours, calendar);
+            Time.addHours(hours, calendar);
             modified = true;
         }
         if (days > 0) {
-            DSTime.addDays(days, calendar);
+            Time.addDays(days, calendar);
             modified = true;
         }
         if (weeks > 0) {
-            DSTime.addWeeks(weeks, calendar);
+            Time.addWeeks(weeks, calendar);
             modified = true;
         }
         if (months > 0) {
-            DSTime.addMonths(months, calendar);
+            Time.addMonths(months, calendar);
             modified = true;
         }
         if (years > 0) {
-            DSTime.addYears(years, calendar);
+            Time.addYears(years, calendar);
             modified = true;
         }
         return modified;
