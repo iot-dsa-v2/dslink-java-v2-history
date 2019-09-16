@@ -2,8 +2,11 @@ package org.iot.dsa.dslink.history;
 
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.TimeZone;
-import org.iot.dsa.DSRuntime;
+import org.iot.dsa.dslink.Action.ResultsType;
+import org.iot.dsa.dslink.ActionResults;
 import org.iot.dsa.dslink.DSIRequester;
 import org.iot.dsa.dslink.DSLink;
 import org.iot.dsa.dslink.DSLinkConnection;
@@ -26,12 +29,8 @@ import org.iot.dsa.node.DSNode;
 import org.iot.dsa.node.DSPath;
 import org.iot.dsa.node.DSStatus;
 import org.iot.dsa.node.DSString;
-import org.iot.dsa.node.DSValueType;
-import org.iot.dsa.node.action.ActionInvocation;
-import org.iot.dsa.node.action.ActionResult;
-import org.iot.dsa.node.action.ActionSpec;
-import org.iot.dsa.node.action.ActionTable;
 import org.iot.dsa.node.action.DSAction;
+import org.iot.dsa.node.action.DSIActionRequest;
 import org.iot.dsa.node.event.DSEvent;
 import org.iot.dsa.node.event.DSISubscriber;
 import org.iot.dsa.node.event.DSISubscription;
@@ -197,9 +196,11 @@ public class History extends AbstractHistoryNode {
         declareDefault(WATCH_STATUS, DSStatus.unknown, "Status of the subscribed value")
                 .setReadOnly(true)
                 .setTransient(true);
-        declareDefault(WATCH_VALUE, DSBool.FALSE, "Value of the subscription")
+        put(WATCH_VALUE, DSBool.FALSE)
                 .setReadOnly(true)
-                .setTransient(true);
+                .setTransient(true)
+                .setLocked(true)
+                .getMetadata().setDescription("Last subscription update");
         declareDefault(WATCH_TS, DSDateTime.NULL, "Timestamp of last subscription update")
                 .setReadOnly(true)
                 .setTransient(true);
@@ -207,8 +208,10 @@ public class History extends AbstractHistoryNode {
                 .setReadOnly(true);
         declareDefault(LAST_TS, DSDateTime.NULL, "Timestamp of last record in the database")
                 .setReadOnly(true);
-        declareDefault(RECORD_COUNT, DSLong.NULL, "Number of records in the database")
-                .setReadOnly(true);
+        put(RECORD_COUNT, DSLong.NULL)
+                .setReadOnly(true)
+                .setLocked(true)
+                .getMetadata().setDescription("Number of record in the database");
         declareDefault(TOTALIZED, DSBool.FALSE,
                        "True means the value represents an accumulation (ever increasing slope)");
         declareDefault(TIMEZONE, DSTimezone.DEFAULT, "Timezone of the data source.");
@@ -231,7 +234,7 @@ public class History extends AbstractHistoryNode {
         return group;
     }
 
-    protected DSITrend getHistory(ActionInvocation request) {
+    protected DSITrend getHistory(DSIActionRequest request) {
         DSMap parameters = request.getParameters();
         String param = parameters.getString(TIMERANGE);
         DSTimeRange range = DSTimeRange.valueOf(param);
@@ -616,24 +619,20 @@ public class History extends AbstractHistoryNode {
     // Inner Classes
     ///////////////////////////////////////////////////////////////////////////
 
-    protected static class GetHistory implements ActionTable, DSISubscriber {
+    protected static class GetHistory implements ActionResults, DSISubscriber {
 
         private History history;
         private boolean realTime;
-        private ActionInvocation request;
+        private DSIActionRequest request;
         private DSISubscription subscription;
         private DSITrend trend;
+        private List<DSList> updates = null;
 
-        protected GetHistory(History history, ActionInvocation request) {
+        protected GetHistory(History history, DSIActionRequest request) {
             this.history = history;
             this.request = request;
             this.trend = history.getHistory(request);
             realTime = request.getParameters().get(REAL_TIME, false);
-        }
-
-        @Override
-        public ActionSpec getAction() {
-            return GET_HISTORY_ACTION;
         }
 
         @Override
@@ -642,23 +641,46 @@ public class History extends AbstractHistoryNode {
         }
 
         @Override
-        public void getMetadata(int index, DSMap bucket) {
-            trend.getMetadata(index, bucket);
+        public void getColumnMetadata(int index, DSMap bucket) {
+            trend.getColumnMetadata(index, bucket);
         }
 
         @Override
-        public DSIValue getValue(int index) {
-            return trend.getValue(index);
+        public void getResults(DSList row) {
+            if (trend != null) {
+                for (int i = 0, len = getColumnCount(); i < len; i++) {
+                    row.add(trend.getValue(i).toElement());
+                }
+            } else {
+                synchronized (this) {
+                    DSList list = updates.remove(0);
+                    row.addAll(list);
+                }
+            }
+        }
+
+        @Override
+        public ResultsType getResultsType() {
+            return ResultsType.TABLE;
         }
 
         @Override
         public boolean next() {
-            boolean ret = trend.next();
-            if (ret == false) {
-                if (realTime) {
-                    subscription = history.subscribe(this, NEW_RECORD_EVENT, null);
-                } else {
-                    DSRuntime.runDelayed(() -> request.close(), 1000);
+            boolean ret = false;
+            if (trend != null) {
+                ret = trend.next();
+                if (ret == false) {
+                    if (realTime) {
+                        subscription = history.subscribe(this, NEW_RECORD_EVENT, null);
+                        trend = null;
+                    } else {
+                        request.close();
+                    }
+                }
+            }
+            if (!ret && realTime) {
+                if (updates != null) {
+                    ret = updates.size() > 0;
                 }
             }
             return ret;
@@ -673,11 +695,16 @@ public class History extends AbstractHistoryNode {
         }
 
         @Override
-        public void onEvent(DSEvent event, DSNode node, DSInfo child, DSIValue data) {
-            request.send(new DSList().add(history.getLastWrite().toElement())
-                                     .add(history.getWatchValue())
-                                     .add(history.getWatchStatus().toElement()));
+        public synchronized void onEvent(DSEvent event, DSNode node, DSInfo child, DSIValue data) {
+            if (updates == null) {
+                updates = new LinkedList<>();
+            }
+            updates.add(new DSList().add(history.getLastWrite().toElement())
+                                    .add(history.getWatchValue())
+                                    .add(history.getWatchStatus().toElement()));
+            request.enqueueResults();
         }
+
     }
 
     private static class GetHistoryAction extends DSAction {
@@ -686,9 +713,9 @@ public class History extends AbstractHistoryNode {
         }
 
         @Override
-        public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
-            History h = (History) target.get();
-            return new GetHistory(h, invocation);
+        public ActionResults invoke(DSIActionRequest request) {
+            History h = (History) request.getTarget();
+            return new GetHistory(h, request);
         }
 
         @Override
@@ -700,10 +727,7 @@ public class History extends AbstractHistoryNode {
             addDefaultParameter(INTERVAL, DSString.valueOf("none"), null);
             addDefaultParameter(ROLLUP, DSRollup.FIRST, null);
             addDefaultParameter(REAL_TIME, DSBool.FALSE, null);
-            addColumnMetadata(TIMESTAMP, DSDateTime.NULL);
-            addColumnMetadata(VALUE, DSValueType.DYNAMIC);
-            addColumnMetadata(STATUS, DSStatus.ok);
-            setResultType(ResultType.STREAM_TABLE);
+            setResultsType(ResultsType.TABLE);
         }
     }
 

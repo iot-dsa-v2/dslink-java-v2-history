@@ -1,6 +1,7 @@
 package org.iot.dsa.dslink.history;
 
 import java.util.Calendar;
+import org.iot.dsa.dslink.ActionResults;
 import org.iot.dsa.node.DSElement;
 import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSInt;
@@ -10,9 +11,8 @@ import org.iot.dsa.node.DSRegistry;
 import org.iot.dsa.node.DSString;
 import org.iot.dsa.node.DSValue;
 import org.iot.dsa.node.DSValueType;
-import org.iot.dsa.node.action.ActionInvocation;
-import org.iot.dsa.node.action.ActionResult;
 import org.iot.dsa.node.action.DSAction;
+import org.iot.dsa.node.action.DSIActionRequest;
 import org.iot.dsa.node.action.DSISetAction;
 import org.iot.dsa.time.Time;
 
@@ -236,10 +236,11 @@ public class HistoryInterval extends DSValue implements DSISetAction, HistoryCon
         public static final SetAction INSTANCE = new SetAction();
 
         @Override
-        public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
-            int val = invocation.getParameters().getInt(COUNT);
+        public ActionResults invoke(DSIActionRequest req) {
+            int val = req.getParameters().getInt(COUNT);
             HistoryIntervalMode mode = HistoryIntervalMode
-                    .valueFor(invocation.getParameters().getString(MODE));
+                    .valueFor(req.getParameters().getString(MODE));
+            DSInfo target = req.getTargetInfo();
             target.getParent().put(target, new HistoryInterval(val, mode));
             return null;
         }

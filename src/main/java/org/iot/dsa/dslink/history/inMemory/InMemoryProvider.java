@@ -8,6 +8,7 @@ import org.iot.dsa.dslink.history.HistoryProvider;
 import org.iot.dsa.node.DSElement;
 import org.iot.dsa.node.DSIValue;
 import org.iot.dsa.node.DSMap;
+import org.iot.dsa.node.DSMetadata;
 import org.iot.dsa.node.DSStatus;
 import org.iot.dsa.table.DSITrend;
 import org.iot.dsa.time.DSDateTime;
@@ -216,7 +217,19 @@ public class InMemoryProvider extends HistoryProvider {
         }
 
         @Override
-        public void getMetadata(int index, DSMap bucket) {
+        public void getColumnMetadata(int index, DSMap bucket) {
+            DSMetadata meta = new DSMetadata(bucket);
+            switch (index) {
+                case 0:
+                    meta.setName("Timestamp");
+                    break;
+                case 1:
+                    meta.setName("Value");
+                    break;
+                default: //case 2:
+                    meta.setName("Status");
+                    break;
+            }
             //TODO implement on history, get from there.
             //timestamp - timezone
             //value, units, precision, bool / enum range.
