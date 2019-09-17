@@ -3,8 +3,6 @@ package org.iot.dsa.dslink.history;
 import org.iot.dsa.node.DSElement;
 import org.iot.dsa.node.DSIValue;
 import org.iot.dsa.node.DSStatus;
-import org.iot.dsa.table.DSITrend;
-import org.iot.dsa.table.DSTrendWrapper;
 import org.iot.dsa.time.DSDateTime;
 
 /**

@@ -35,8 +35,6 @@ import org.iot.dsa.node.event.DSEvent;
 import org.iot.dsa.node.event.DSISubscriber;
 import org.iot.dsa.node.event.DSISubscription;
 import org.iot.dsa.rollup.DSRollup;
-import org.iot.dsa.table.DSDeltaTrend;
-import org.iot.dsa.table.DSITrend;
 import org.iot.dsa.time.DSDateTime;
 import org.iot.dsa.time.DSTimeRange;
 import org.iot.dsa.time.DSTimezone;

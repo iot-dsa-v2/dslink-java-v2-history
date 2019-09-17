@@ -5,7 +5,6 @@ import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSMap;
 import org.iot.dsa.node.DSNode;
 import org.iot.dsa.node.DSStatus;
-import org.iot.dsa.table.DSITrend;
 import org.iot.dsa.time.DSDateTime;
 import org.iot.dsa.time.DSTimeRange;
 

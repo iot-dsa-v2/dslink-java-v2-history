@@ -5,8 +5,6 @@ import java.util.TimeZone;
 import org.iot.dsa.node.DSElement;
 import org.iot.dsa.rollup.DSRollup;
 import org.iot.dsa.rollup.RollupFunction;
-import org.iot.dsa.table.DSITrend;
-import org.iot.dsa.table.DSTrendWrapper;
 import org.iot.dsa.time.Time;
 
 /**

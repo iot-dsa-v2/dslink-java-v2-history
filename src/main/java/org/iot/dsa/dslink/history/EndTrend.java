@@ -1,7 +1,5 @@
 package org.iot.dsa.dslink.history;
 
-import org.iot.dsa.table.DSITrend;
-import org.iot.dsa.table.DSTrendWrapper;
 import org.iot.dsa.time.DSDateTime;
 
 /**

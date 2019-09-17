@@ -2,6 +2,7 @@ package org.iot.dsa.dslink.history.inMemory;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.iot.dsa.dslink.history.DSITrend;
 import org.iot.dsa.dslink.history.History;
 import org.iot.dsa.dslink.history.HistoryDatabase;
 import org.iot.dsa.dslink.history.HistoryProvider;
@@ -10,7 +11,6 @@ import org.iot.dsa.node.DSIValue;
 import org.iot.dsa.node.DSMap;
 import org.iot.dsa.node.DSMetadata;
 import org.iot.dsa.node.DSStatus;
-import org.iot.dsa.table.DSITrend;
 import org.iot.dsa.time.DSDateTime;
 import org.iot.dsa.time.DSTimeRange;
 
