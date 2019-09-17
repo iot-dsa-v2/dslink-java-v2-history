@@ -1,13 +1,13 @@
 {
   "name": "dslink-java-v2-history",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Historian Framework",
   "main": "bin/dslink-java-v2-history",
   "configs": {
     "main-node": {
       "help": "Class name of the main node.",
       "type": "string",
-      "value": "org.iot.dsa.dslink.example.MainNode"
+      "value": "org.iot.dsa.dslink.history.inMemory.MainNode"
     },
     "log": {
       "help": "all, trace, debug, info, warn, error, off",
@@ -17,7 +17,7 @@
     "msgpack": {
       "help": "Whether or not to use msgpack.  False is helpful for debugging.",
       "type": "bool",
-      "value": true
+      "value": false
     },
     "broker": {
       "type": "url",

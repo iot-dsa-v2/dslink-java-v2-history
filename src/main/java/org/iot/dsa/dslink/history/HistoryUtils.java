@@ -1,83 +1,151 @@
 package org.iot.dsa.dslink.history;
 
+import org.iot.dsa.dslink.ActionResults;
+import org.iot.dsa.node.DSBool;
 import org.iot.dsa.node.DSInfo;
+import org.iot.dsa.node.DSMap;
 import org.iot.dsa.node.DSNode;
 import org.iot.dsa.node.DSString;
-import org.iot.dsa.node.action.ActionInvocation;
-import org.iot.dsa.node.action.ActionResult;
 import org.iot.dsa.node.action.DSAction;
-import org.iot.dsa.node.action.DSAction.Parameterless;
+import org.iot.dsa.node.action.DSIActionRequest;
+import org.iot.dsa.time.DSTimeRange;
 
-public class HistoryUtils implements HistoryContants {
+class HistoryUtils implements HistoryConstants {
 
     ///////////////////////////////////////////////////////////////////////////
     // Class Fields
     ///////////////////////////////////////////////////////////////////////////
 
-    public static DSAction deleteNodeData = new Parameterless() {
+    public static DSAction deleteNodeData = new DSAction() {
         @Override
-        public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
-            String arg = invocation.getParameters().getString(DELETE);
+        public ActionResults invoke(DSIActionRequest req) {
+            String arg = req.getParameters().getString(DELETE);
+            DSInfo target = req.getTargetInfo();
             if (NODE_AND_DATA.equals(arg)) {
-                HistoryPurge historyPurge = (HistoryPurge) target.get();
-                historyPurge.purge(-1, -1);
+                HistoryNode historyNode = (HistoryNode) target.get();
+                historyNode.purge(DSTimeRange.NULL);
             }
             target.getParent().remove(target);
             return null;
         }
 
         {
-            //setActionGroup(DSAction.EDIT_GROUP); //TODO
+            setActionGroup(DSAction.EDIT_GROUP);
             addDefaultParameter(DELETE, DELETE_MODE,
                                 "Delete only the node or the node and all backing data");
         }
     };
 
-    public static DSAction newGroupFolder = new Parameterless() {
+    public static DSAction newGroupFolder = new DSAction() {
         @Override
-        public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
+        public ActionResults invoke(DSIActionRequest req) {
+            DSInfo target = req.getTargetInfo();
             HistoryProvider provider = HistoryUtils.getProvider(target);
             target.getNode().add(
-                    invocation.getParameters().getString(NAME),
-                    provider.makeGroupFolder(invocation.getParameters()));
+                    req.getParameters().getString(NAME),
+                    provider.makeGroupFolder(req.getParameters()));
             return null;
         }
 
         {
-            //setActionGroup(DSAction.NEW_GROUP); //TODO
+            setActionGroup(DSAction.NEW_GROUP);
             addParameter(NAME, DSString.NULL, "Node name");
         }
     };
 
-    public static DSAction newHistoryFolder = new Parameterless() {
+    public static DSAction newHistory = new DSAction() {
         @Override
-        public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
+        public ActionResults invoke(DSIActionRequest req) {
+            DSInfo target = req.getTargetInfo();
             HistoryProvider provider = HistoryUtils.getProvider(target);
-            target.getNode().add(
-                    invocation.getParameters().getString(NAME),
-                    provider.makeHistoryFolder(invocation.getParameters()));
+            DSMap params = req.getParameters();
+            String name = params.getString(NAME);
+            String path = params.getString(WATCH_PATH);
+            if ((path == null) || path.isEmpty()) {
+                throw new IllegalArgumentException("Invalid path: " + path);
+            }
+            if (name == null) {
+                name = path;
+            }
+            DSNode targetNode = target.getNode();
+            if (targetNode.getInfo(name) != null) {
+                throw new IllegalArgumentException("Name already in use: " + name);
+            }
+            History his = provider.makeHistoryNode(req.getParameters());
+            his.setWatchPath(path);
+            target.getNode().add(name, his);
             return null;
         }
 
         {
-            //setActionGroup(DSAction.NEW_GROUP); //TODO
+            setActionGroup(DSAction.NEW_GROUP);
+            addParameter(NAME, DSString.NULL, "Node name").setPlaceHolder("Optional");
+            addParameter(WATCH_PATH, DSString.NULL, "Subscription path").setPlaceHolder("Required");
+        }
+    };
+
+    public static DSAction newHistoryFolder = new DSAction() {
+        @Override
+        public ActionResults invoke(DSIActionRequest req) {
+            DSInfo target = req.getTargetInfo();
+            HistoryProvider provider = HistoryUtils.getProvider(target);
+            target.getNode().add(
+                    req.getParameters().getString(NAME),
+                    provider.makeHistoryFolder(req.getParameters()));
+            return null;
+        }
+
+        {
+            setActionGroup(DSAction.NEW_GROUP);
             addParameter(NAME, DSString.NULL, "Node name");
         }
     };
 
-    public static DSAction newHistoryGroup = new Parameterless() {
+    public static DSAction newHistoryGroup = new DSAction() {
         @Override
-        public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
+        public ActionResults invoke(DSIActionRequest req) {
+            DSInfo target = req.getTargetInfo();
             HistoryProvider provider = HistoryUtils.getProvider(target);
             target.getNode().add(
-                    invocation.getParameters().getString(NAME),
-                    provider.makeGroupNode(invocation.getParameters()));
+                    req.getParameters().getString(NAME),
+                    provider.makeGroupNode(req.getParameters()));
             return null;
         }
 
         {
-            //setActionGroup(DSAction.NEW_GROUP); //TODO
+            setActionGroup(DSAction.NEW_GROUP);
             addParameter(NAME, DSString.NULL, "Node name");
+        }
+    };
+
+    public static DSAction purge = new DSAction() {
+        @Override
+        public ActionResults invoke(DSIActionRequest req) {
+            HistoryNode node = (HistoryNode) req.getTarget();
+            DSTimeRange timeRange = DSTimeRange
+                    .valueOf(req.getParameters().getString(TIME_RANGE));
+            node.purge(timeRange);
+            return null;
+        }
+
+        {
+            addParameter(TIME_RANGE, DSTimeRange.NULL,
+                         "Delete records with timestamps in this range");
+        }
+    };
+
+    public static DSAction writeAliases = new DSAction() {
+        @Override
+        public ActionResults invoke(DSIActionRequest req) {
+            AbstractHistoryNode node = (AbstractHistoryNode) req.getTarget();
+            boolean force = req.getParameters().get(FORCE_OVERWRITE, false);
+            node.writeAliases(force);
+            return null;
+        }
+
+        {
+            addDefaultParameter(FORCE_OVERWRITE, DSBool.FALSE,
+                                "Overwrite existing aliases to other nodes");
         }
     };
 

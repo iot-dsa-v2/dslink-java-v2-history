@@ -1,14 +1,8 @@
-package org.iot.dsa.dslink.history;
+package org.iot.dsa.dslink.history.inMemory;
 
-import java.util.Collection;
-import org.iot.dsa.node.DSInfo;
+import org.iot.dsa.dslink.history.HistoryDatabase;
 
-/**
- * Contains histories and other history folders.
- *
- * @author Aaron Hansen
- */
-public class HistoryFolder extends AbstractHistoryNode {
+public class InMemoryDatabase extends HistoryDatabase {
 
     ///////////////////////////////////////////////////////////////////////////
     // Class Fields
@@ -26,34 +20,27 @@ public class HistoryFolder extends AbstractHistoryNode {
     // Public Methods
     ///////////////////////////////////////////////////////////////////////////
 
-    @Override
-    public DSInfo getVirtualAction(DSInfo target, String name) {
-        if (target.get() == this) {
-            switch (name) {
-                case APPLY_ALIASES:
-                    return virtualInfo(APPLY_ALIASES, HistoryUtils.writeAliases);
-                case DELETE:
-                    return virtualInfo(DELETE, HistoryUtils.deleteNodeData);
-                case FOLDER:
-                    return virtualInfo(FOLDER, HistoryUtils.newHistoryFolder);
-                case HISTORY:
-                    return virtualInfo(HISTORY, HistoryUtils.newHistory);
-            }
-        }
-        return super.getVirtualAction(target, name);
-    }
-
-    @Override
-    public void getVirtualActions(DSInfo target, Collection<String> names) {
-        super.getVirtualActions(target, names);
-        names.add(FOLDER);
-        names.add(HISTORY);
-        names.add(APPLY_ALIASES);
-    }
-
     ///////////////////////////////////////////////////////////////////////////
     // Protected Methods
     ///////////////////////////////////////////////////////////////////////////
+
+    @Override
+    protected void checkConfig() {
+    }
+
+    @Override
+    protected void doConnect() {
+        connOk();
+    }
+
+    @Override
+    protected void doDisconnect() {
+    }
+
+    @Override
+    protected void doPing() {
+        connOk();
+    }
 
     ///////////////////////////////////////////////////////////////////////////
     // Package / Private Methods
