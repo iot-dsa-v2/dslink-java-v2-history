@@ -21,7 +21,7 @@ repositories {
 
 dependencies {
     //api 'org.iot-dsa:dslink-v2-websocket:+' //for a locally installed sdk
-    api 'com.github.iot-dsa-v2.sdk-dslink-java-v2:dslink-v2-websocket:0.69.0'
+    api 'com.github.iot-dsa-v2.sdk-dslink-java-v2:dslink-v2-websocket:0.70.0'
     testImplementation 'org.testng:testng:6+'
 }
 
@@ -45,5 +45,5 @@ test {
 }
 
 wrapper {
-    gradleVersion = '5.6'
+    gradleVersion = '5.6.2'
 }

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.TimeZone;
 import org.iot.dsa.dslink.Action.ResultsType;
 import org.iot.dsa.dslink.ActionResults;
+import org.iot.dsa.dslink.AsyncActionResults;
 import org.iot.dsa.dslink.DSIRequester;
 import org.iot.dsa.dslink.DSLink;
 import org.iot.dsa.dslink.DSLinkConnection;
@@ -617,7 +618,7 @@ public class History extends AbstractHistoryNode {
     // Inner Classes
     ///////////////////////////////////////////////////////////////////////////
 
-    protected static class GetHistory implements ActionResults, DSISubscriber {
+    protected static class GetHistory implements AsyncActionResults, DSISubscriber {
 
         private History history;
         private boolean realTime;
@@ -659,7 +660,7 @@ public class History extends AbstractHistoryNode {
 
         @Override
         public ResultsType getResultsType() {
-            return ResultsType.TABLE;
+            return ResultsType.STREAM;
         }
 
         @Override
@@ -700,7 +701,7 @@ public class History extends AbstractHistoryNode {
             updates.add(new DSList().add(history.getLastWrite().toElement())
                                     .add(history.getWatchValue())
                                     .add(history.getWatchStatus().toElement()));
-            request.enqueueResults();
+            request.sendResults();
         }
 
     }
@@ -725,7 +726,7 @@ public class History extends AbstractHistoryNode {
             addDefaultParameter(INTERVAL, DSString.valueOf("none"), null);
             addDefaultParameter(ROLLUP, DSRollup.FIRST, null);
             addDefaultParameter(REAL_TIME, DSBool.FALSE, null);
-            setResultsType(ResultsType.TABLE);
+            setResultsType(ResultsType.STREAM);
         }
     }
 

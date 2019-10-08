@@ -1,6 +1,6 @@
 {
   "name": "dslink-java-v2-history",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Historian Framework",
   "main": "bin/dslink-java-v2-history",
   "configs": {
