@@ -1,18 +1,12 @@
-package org.iot.dsa.dslink.history;
+package org.iot.dsa.dslink.history.value;
+
+import org.iot.dsa.node.*;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.iot.dsa.node.DSElement;
-import org.iot.dsa.node.DSIEnum;
-import org.iot.dsa.node.DSIObject;
-import org.iot.dsa.node.DSIValue;
-import org.iot.dsa.node.DSList;
-import org.iot.dsa.node.DSRegistry;
-import org.iot.dsa.node.DSString;
-import org.iot.dsa.node.DSValueType;
 
 /**
- * Enum that describes the history type.
+ * Enum that describes the history data type.
  *
  * @author Aaron Hansen
  */
@@ -33,64 +27,33 @@ public enum HistoryType implements DSIEnum, DSIValue {
     MAP("Map"),
     STRING("String");
 
-    private static final Map<String, HistoryType> enums = new HashMap<String, HistoryType>();
+    private static final Map<String, HistoryType> enums = new HashMap<>();
 
     ///////////////////////////////////////////////////////////////////////////
     // Instance Fields
     ///////////////////////////////////////////////////////////////////////////
 
-    private DSString element;
+    static {
+        DSRegistry.registerDecoder(HistoryType.class, BOOLEAN);
+        for (HistoryType e : HistoryType.values()) {
+            enums.put(e.name(), e);
+            enums.put(e.toString(), e);
+            enums.put(e.toString().toLowerCase(), e);
+        }
+    }
 
     ///////////////////////////////////////////////////////////////////////////
     // Constructors
     ///////////////////////////////////////////////////////////////////////////
 
-    private HistoryType(String display) {
-        this.element = DSString.valueOf(display);
-    }
+    private DSString element;
 
     ///////////////////////////////////////////////////////////////////////////
     // Public Methods
     ///////////////////////////////////////////////////////////////////////////
 
-    @Override
-    public DSIObject copy() {
-        return this;
-    }
-
-    @Override
-    public DSList getEnums(DSList bucket) {
-        if (bucket == null) {
-            bucket = new DSList();
-        }
-        for (HistoryType e : values()) {
-            bucket.add(e.toElement());
-        }
-        return bucket;
-    }
-
-    @Override
-    public DSValueType getValueType() {
-        return DSValueType.ENUM;
-    }
-
-    @Override
-    public boolean isNull() {
-        return false;
-    }
-
-    public boolean isUnknown() {
-        return this == UNKNOWN;
-    }
-
-    @Override
-    public DSElement toElement() {
-        return element;
-    }
-
-    @Override
-    public String toString() {
-        return element.toString();
+    HistoryType(String display) {
+        this.element = DSString.valueOf(display);
     }
 
     /**
@@ -131,21 +94,52 @@ public enum HistoryType implements DSIEnum, DSIValue {
     }
 
     @Override
+    public DSIObject copy() {
+        return this;
+    }
+
+    @Override
+    public DSList getEnums(DSList bucket) {
+        if (bucket == null) {
+            bucket = new DSList();
+        }
+        for (HistoryType e : values()) {
+            bucket.add(e.toElement());
+        }
+        return bucket;
+    }
+
+    @Override
+    public DSValueType getValueType() {
+        return DSValueType.ENUM;
+    }
+
+    @Override
+    public boolean isNull() {
+        return false;
+    }
+
+    @Override
+    public DSElement toElement() {
+        return element;
+    }
+
+    @Override
     public DSIValue valueOf(DSElement element) {
         return valueFor(element.toString());
+    }
+
+    public boolean isUnknown() {
+        return this == UNKNOWN;
     }
 
     /////////////////////////////////////////////////////////////////
     // Initialization
     /////////////////////////////////////////////////////////////////
 
-    static {
-        DSRegistry.registerDecoder(HistoryType.class, BOOLEAN);
-        for (HistoryType e : BOOLEAN.values()) {
-            enums.put(e.name(), e);
-            enums.put(e.toString(), e);
-            enums.put(e.toString().toLowerCase(), e);
-        }
+    @Override
+    public String toString() {
+        return element.toString();
     }
 
 }

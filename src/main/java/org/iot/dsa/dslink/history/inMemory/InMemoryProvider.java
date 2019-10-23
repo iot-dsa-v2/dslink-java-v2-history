@@ -1,19 +1,20 @@
 package org.iot.dsa.dslink.history.inMemory;
 
-import java.util.HashMap;
-import java.util.Map;
-import org.iot.dsa.dslink.history.DSITrend;
 import org.iot.dsa.dslink.history.History;
 import org.iot.dsa.dslink.history.HistoryDatabase;
 import org.iot.dsa.dslink.history.HistoryProvider;
-import org.iot.dsa.node.DSElement;
-import org.iot.dsa.node.DSIValue;
-import org.iot.dsa.node.DSMap;
-import org.iot.dsa.node.DSMetadata;
-import org.iot.dsa.node.DSStatus;
+import org.iot.dsa.dslink.history.table.DSITrend;
+import org.iot.dsa.node.*;
 import org.iot.dsa.time.DSDateTime;
 import org.iot.dsa.time.DSTimeRange;
 
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Provider implementation which simply store data in memory.
+ * @author Aaron Hansen
+ */
 public class InMemoryProvider extends HistoryProvider {
 
     ///////////////////////////////////////////////////////////////////////////
@@ -99,15 +100,15 @@ public class InMemoryProvider extends HistoryProvider {
         HistoryRecord prev = null;
         HistoryRecord rec = impl.head;
         while (rec != null) {
+            if (hasEnd && rec.timestamp.isAfter(end)) {
+                break;
+            }
             if (range.contains(rec.timestamp)) {
                 impl.remove(prev, rec);
             } else {
                 prev = rec;
             }
             rec = rec.next;
-            if (hasEnd && rec.timestamp.isAfter(end)) {
-                break;
-            }
         }
         return getFirstTimestamp(history);
     }
@@ -222,17 +223,30 @@ public class InMemoryProvider extends HistoryProvider {
             switch (index) {
                 case 0:
                     meta.setName("Timestamp");
+                    DSMetadata.getMetadata(history.getInfo(History.TIMEZONE), bucket);
                     break;
                 case 1:
                     meta.setName("Value");
+                    DSMetadata.getMetadata(history.getInfo(History.WATCH_VALUE), bucket);
                     break;
                 default: //case 2:
                     meta.setName("Status");
+                    meta.setType(DSStatus.ok);
                     break;
             }
-            //TODO implement on history, get from there.
-            //timestamp - timezone
-            //value, units, precision, bool / enum range.
+        }
+
+        @Override
+        public DSIValue getValue(int index) {
+            switch (index) {
+                case 0:
+                    return current.timestamp;
+                case 1:
+                    return current.value;
+                case 2:
+                    return current.status;
+            }
+            throw new IllegalArgumentException("Index out of bounds: " + index);
         }
 
         @Override
@@ -258,19 +272,6 @@ public class InMemoryProvider extends HistoryProvider {
         @Override
         public DSElement getValue() {
             return current.value;
-        }
-
-        @Override
-        public DSIValue getValue(int index) {
-            switch (index) {
-                case 0:
-                    return current.timestamp;
-                case 1:
-                    return current.value;
-                case 2:
-                    return current.status;
-            }
-            throw new IllegalArgumentException("Index out of bounds: " + index);
         }
 
         @Override

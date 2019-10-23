@@ -1,4 +1,4 @@
-package org.iot.dsa.dslink.history;
+package org.iot.dsa.dslink.history.table;
 
 import org.iot.dsa.time.DSDateTime;
 
@@ -7,7 +7,7 @@ import org.iot.dsa.time.DSDateTime;
  *
  * @author Aaron Hansen
  */
-class EndTrend extends DSTrendWrapper {
+public class EndTrend extends DSTrendWrapper {
 
     ////////////////////////////////////////////////////////////////////////////
     // Instance Fields
@@ -32,9 +32,7 @@ class EndTrend extends DSTrendWrapper {
     public boolean next() {
         DSITrend inner = getInner();
         if (inner.next()) {
-            if (inner.getTimestamp() < end) {
-                return true;
-            }
+            return inner.getTimestamp() < end;
         }
         return false;
     }

@@ -1,7 +1,8 @@
 package org.iot.dsa.dslink.history;
 
-import java.util.Collection;
 import org.iot.dsa.node.DSInfo;
+
+import java.util.Collection;
 
 /**
  * Contains history groups and other history group folders.
@@ -27,7 +28,7 @@ public class HistoryGroupFolder extends AbstractHistoryNode {
     ///////////////////////////////////////////////////////////////////////////
 
     @Override
-    public DSInfo getVirtualAction(DSInfo target, String name) {
+    public DSInfo<?> getVirtualAction(DSInfo<?> target, String name) {
         if (target.get() == this) {
             switch (name) {
                 case APPLY_ALIASES:
@@ -44,11 +45,13 @@ public class HistoryGroupFolder extends AbstractHistoryNode {
     }
 
     @Override
-    public void getVirtualActions(DSInfo target, Collection<String> names) {
+    public void getVirtualActions(DSInfo<?> target, Collection<String> names) {
         super.getVirtualActions(target, names);
-        names.add(APPLY_ALIASES);
-        names.add(FOLDER);
-        names.add(HISTORY_GROUP);
+        if (target.get() == this) {
+            names.add(APPLY_ALIASES);
+            names.add(FOLDER);
+            names.add(HISTORY_GROUP);
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////

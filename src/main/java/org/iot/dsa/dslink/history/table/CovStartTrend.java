@@ -1,4 +1,4 @@
-package org.iot.dsa.dslink.history;
+package org.iot.dsa.dslink.history.table;
 
 import org.iot.dsa.node.DSElement;
 import org.iot.dsa.node.DSIValue;
@@ -9,8 +9,10 @@ import org.iot.dsa.time.DSDateTime;
  * This trend uses records prior to the start time in an attempt to return a first row that
  * matches the starting timestamp.   This is for cov trends that collect at irregular intervals
  * and don't have nicely aligned timestamps.
+ *
+ * @author Aaron Hansen
  */
-class CovStartTrend extends DSTrendWrapper {
+public class CovStartTrend extends DSTrendWrapper {
 
     ///////////////////////////////////////////////////////////////////////////
     // Class Fields
@@ -44,6 +46,22 @@ class CovStartTrend extends DSTrendWrapper {
     ///////////////////////////////////////////////////////////////////////////
 
     @Override
+    public DSIValue getValue(int index) {
+        if (state == PRE_REC) {
+            if (index == getTimestampColumn()) {
+                return DSDateTime.valueOf(preTimestamp);
+            }
+            if (index == getValueColumn()) {
+                return preValue;
+            }
+            if (index == getStatusColumn()) {
+                return DSStatus.valueOf(preStatus);
+            }
+        }
+        return super.getValue(index);
+    }
+
+    @Override
     public int getStatus() {
         if (state == PRE_REC) {
             return preStatus;
@@ -65,22 +83,6 @@ class CovStartTrend extends DSTrendWrapper {
             return preValue;
         }
         return super.getValue();
-    }
-
-    @Override
-    public DSIValue getValue(int index) {
-        if (state == PRE_REC) {
-            if (index == getTimestampColumn()) {
-                return DSDateTime.valueOf(preTimestamp);
-            }
-            if (index == getValueColumn()) {
-                return preValue;
-            }
-            if (index == getStatusColumn()) {
-                return DSStatus.valueOf(preStatus);
-            }
-        }
-        return super.getValue(index);
     }
 
     @Override
@@ -112,7 +114,7 @@ class CovStartTrend extends DSTrendWrapper {
 
     private boolean first() {
         long startTs = start.timeInMillis();
-        long ts = -1;
+        long ts;
         DSITrend trend = getInner();
         while (trend.next()) {
             ts = trend.getTimestamp();

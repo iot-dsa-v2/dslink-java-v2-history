@@ -1,4 +1,4 @@
-package org.iot.dsa.dslink.history;
+package org.iot.dsa.dslink.history.table;
 
 import org.iot.dsa.node.DSDouble;
 import org.iot.dsa.node.DSElement;
@@ -93,7 +93,7 @@ public class DSDeltaTrend extends DSTrendWrapper {
     }
 
     /**
-     * When true, the earlier timestamp is assigned to the delta (true is default).
+     * When true, the earlier timestamp is assigned to the delta (default is true).
      */
     public DSDeltaTrend setLeading(boolean leading) {
         this.leading = leading;

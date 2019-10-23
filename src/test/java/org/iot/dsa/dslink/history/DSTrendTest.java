@@ -1,7 +1,9 @@
 package org.iot.dsa.dslink.history;
 
-import java.util.ArrayList;
-import java.util.Iterator;
+import org.iot.dsa.dslink.history.table.DSDeltaTrend;
+import org.iot.dsa.dslink.history.table.DSITrend;
+import org.iot.dsa.dslink.history.table.DSIntervalTrend;
+import org.iot.dsa.dslink.history.table.SimpleTrend;
 import org.iot.dsa.node.DSLong;
 import org.iot.dsa.node.DSStatus;
 import org.iot.dsa.rollup.DSRollup;
@@ -11,13 +13,16 @@ import org.iot.dsa.time.DSDuration;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+
 /**
  * @author Aaron Hansen
  */
 public class DSTrendTest {
 
     @Test
-    public void covTest() throws Exception {
+    public void covTest() {
         SimpleTrend trend = new SimpleTrend();
         trend.setValueType(DSLong.NULL);
         ArrayList<DSDateTime> list = timeSeries(DSDuration.valueOf("PT15M"), 12);
@@ -27,8 +32,8 @@ public class DSTrendTest {
         Iterator<DSDateTime> it = list.iterator();
         DSDuration dur = DSDuration.valueOf("PT5M");
         DSIntervalTrend cur = new DSIntervalTrend(trend.trend(),
-                                                  dur,
-                                                  DSRollup.FIRST).setCov(true); //COV
+                dur,
+                DSRollup.FIRST).setCov(true); //COV
         RollupFunction func = DSRollup.COUNT.getFunction();
         DSDateTime dt = it.next();
         while (cur.next()) {
@@ -42,7 +47,7 @@ public class DSTrendTest {
     }
 
     @Test
-    public void deltaTest() throws Exception {
+    public void deltaTest() {
         SimpleTrend trend = new SimpleTrend();
         trend.setValueType(DSLong.NULL);
         int val = 0;
@@ -53,8 +58,8 @@ public class DSTrendTest {
         }
         Iterator<DSDateTime> it = list.iterator();
         DSIntervalTrend cur = new DSIntervalTrend(new DSDeltaTrend(trend.trend()), //DELTA
-                                                  DSDuration.valueOf("PT1H"),
-                                                  DSRollup.SUM);
+                DSDuration.valueOf("PT1H"),
+                DSRollup.SUM);
         //row 1
         Assert.assertTrue(cur.next());
         Assert.assertEquals(cur.getValue(), DSLong.valueOf(4));
@@ -78,7 +83,7 @@ public class DSTrendTest {
     }
 
     @Test
-    public void rollupTest() throws Exception {
+    public void rollupTest() {
         SimpleTrend trend = new SimpleTrend();
         trend.setValueType(DSLong.NULL);
         int val = 0;
@@ -88,8 +93,8 @@ public class DSTrendTest {
         }
         Iterator<DSDateTime> it = list.iterator();
         DSIntervalTrend cur = new DSIntervalTrend(trend.trend(),
-                                                  DSDuration.valueOf("PT1H"),
-                                                  DSRollup.COUNT);
+                DSDuration.valueOf("PT1H"),
+                DSRollup.COUNT);
         //row 1
         Assert.assertTrue(cur.next());
         Assert.assertEquals(cur.getValue(), DSLong.valueOf(4));
@@ -145,7 +150,7 @@ public class DSTrendTest {
     }
 
     private ArrayList<DSDateTime> timeSeries(DSDuration interval, int intervals) {
-        ArrayList<DSDateTime> ret = new ArrayList<DSDateTime>();
+        ArrayList<DSDateTime> ret = new ArrayList<>();
         DSDateTime dt = DSDateTime.valueOf(2018, 10, 19);
         for (int i = 0; i < intervals; i++) {
             ret.add(dt);

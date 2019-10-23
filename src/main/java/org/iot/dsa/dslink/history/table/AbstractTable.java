@@ -1,12 +1,9 @@
-package org.iot.dsa.dslink.history;
+package org.iot.dsa.dslink.history.table;
+
+import org.iot.dsa.node.*;
 
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import org.iot.dsa.node.DSIMetadata;
-import org.iot.dsa.node.DSIValue;
-import org.iot.dsa.node.DSMap;
-import org.iot.dsa.node.DSMetadata;
-import org.iot.dsa.node.DSValueType;
 
 /**
  * Used for building the SimpleTable and SimpleTrend.
@@ -21,7 +18,7 @@ public class AbstractTable {
     // Instance Fields
     ///////////////////////////////////////////////////////////////////////////
 
-    protected ArrayList<DSMap> columns = new ArrayList<DSMap>();
+    protected ArrayList<DSMap> columns = new ArrayList<>();
     protected ConcurrentLinkedQueue<DSIValue[]> rows = new ConcurrentLinkedQueue<>();
 
     ///////////////////////////////////////////////////////////////////////////

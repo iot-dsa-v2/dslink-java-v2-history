@@ -1,11 +1,13 @@
-package org.iot.dsa.dslink.history;
+package org.iot.dsa.dslink.history.table;
 
-import java.util.Calendar;
-import java.util.TimeZone;
+import org.iot.dsa.dslink.history.value.GetHistoryInterval;
 import org.iot.dsa.node.DSElement;
 import org.iot.dsa.rollup.DSRollup;
 import org.iot.dsa.rollup.RollupFunction;
 import org.iot.dsa.time.Time;
+
+import java.util.Calendar;
+import java.util.TimeZone;
 
 /**
  * Rolls up values in a series to intervals.  Do not use if the interval
@@ -13,14 +15,14 @@ import org.iot.dsa.time.Time;
  *
  * @author Aaron Hansen
  */
-class GetHistoryIntervalTrend extends DSTrendWrapper {
+public class GetHistoryIntervalTrend extends DSTrendWrapper {
 
     /////////////////////////////////////////////////////////////////
     // Instance Fields
     /////////////////////////////////////////////////////////////////
 
     private Calendar calendar;
-    private boolean cov = false;
+    private boolean cov;
     private long curTs;
     private GetHistoryInterval interval;
     private long nextTs = -1;

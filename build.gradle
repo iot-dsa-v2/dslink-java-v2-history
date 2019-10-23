@@ -21,14 +21,14 @@ repositories {
 
 dependencies {
     //api 'org.iot-dsa:dslink-v2-websocket:+' //for a locally installed sdk
-    api 'com.github.iot-dsa-v2.sdk-dslink-java-v2:dslink-v2-websocket:0.70.0'
+    api 'com.github.iot-dsa-v2.sdk-dslink-java-v2:dslink-v2-websocket:0.72.1'
     testImplementation 'org.testng:testng:6+'
 }
 
 jar {
     manifest {
         attributes(
-                'Automatic-Module-Name' : 'org.iot.dsa.' + project.name.replaceAll('-','.')
+                'Automatic-Module-Name': 'org.iot.dsa.' + project.name.replaceAll('-', '.')
         )
     }
 }

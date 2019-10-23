@@ -1,14 +1,15 @@
 package org.iot.dsa.dslink.history;
 
-import java.util.Collection;
 import org.iot.dsa.DSRuntime;
 import org.iot.dsa.dslink.ActionResults;
 import org.iot.dsa.dslink.DSMainNode;
 import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSNode;
 import org.iot.dsa.node.DSString;
-import org.iot.dsa.node.action.DSIActionRequest;
 import org.iot.dsa.node.action.DSAction;
+import org.iot.dsa.node.action.DSIActionRequest;
+
+import java.util.Collection;
 
 /**
  * The main and only node of this link.
@@ -39,7 +40,7 @@ public abstract class HistoryMainNode extends DSMainNode implements HistoryConst
     ///////////////////////////////////////////////////////////////////////////
 
     @Override
-    public DSInfo getVirtualAction(DSInfo target, String name) {
+    public DSInfo<?> getVirtualAction(DSInfo<?> target, String name) {
         if (target.get() == this) {
             if (NEW_DATABASE.equals(name)) {
                 return makeNewDatabaseAction();
@@ -49,7 +50,7 @@ public abstract class HistoryMainNode extends DSMainNode implements HistoryConst
     }
 
     @Override
-    public void getVirtualActions(DSInfo target, Collection<String> bucket) {
+    public void getVirtualActions(DSInfo<?> target, Collection<String> bucket) {
         if (target.get() == this) {
             bucket.add(NEW_DATABASE);
         }
@@ -61,12 +62,30 @@ public abstract class HistoryMainNode extends DSMainNode implements HistoryConst
     ///////////////////////////////////////////////////////////////////////////
 
     /**
+     * Asynchronously runs housekeeping.
+     */
+    @Override
+    protected void onStable() {
+        super.onStable();
+        DSRuntime.run(this::doHousekeeping);
+    }
+
+    @Override
+    protected void onStopped() {
+        if (houseKeepingTimer != null) {
+            houseKeepingTimer.cancel();
+            houseKeepingTimer = null;
+        }
+        super.onStopped();
+    }
+
+    /**
      * Continuously scans the entire tree and calls houseKeeping on all HistoryNodes.
      */
     protected void doHousekeeping() {
         HistoryNode hnode;
         while (isRunning()) {
-            DSInfo info = getFirstInfo(HistoryNode.class);
+            DSInfo<?> info = getFirstInfo(HistoryNode.class);
             while (info != null) {
                 hnode = (HistoryNode) info.get();
                 hnode.houseKeeping();
@@ -87,8 +106,12 @@ public abstract class HistoryMainNode extends DSMainNode implements HistoryConst
      * Override point.  By default this creates an action with a single name parameter and
      * uses getProvider().makeDatabaseNode(actionParameters).
      */
-    protected DSInfo makeNewDatabaseAction() {
-        DSInfo ret = virtualInfo(NEW_DATABASE, new DSAction() {
+    protected DSInfo<?> makeNewDatabaseAction() {
+        DSInfo<?> ret = virtualInfo(NEW_DATABASE, new DSAction() {
+            {
+                addParameter(NAME, DSString.NULL, "The node name");
+            }
+
             @Override
             public ActionResults invoke(DSIActionRequest req) {
                 String name = req.getParameters().getString(NAME);
@@ -96,33 +119,9 @@ public abstract class HistoryMainNode extends DSMainNode implements HistoryConst
                 add(name, dbnode);
                 return null;
             }
-
-            {
-                addParameter(NAME, DSString.NULL, "The node name");
-            }
         });
         ret.getMetadata().setActionGroup(DSAction.NEW_GROUP, null);
         return ret;
-    }
-
-    /**
-     * Asynchronously runs housekeeping.
-     */
-    @Override
-    protected void onStable() {
-        super.onStable();
-        DSRuntime.run(() -> {
-            doHousekeeping();
-        });
-    }
-
-    @Override
-    protected void onStopped() {
-        if (houseKeepingTimer != null) {
-            houseKeepingTimer.cancel();
-            houseKeepingTimer = null;
-        }
-        super.onStopped();
     }
 
 

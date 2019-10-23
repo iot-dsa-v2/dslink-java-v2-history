@@ -3,6 +3,10 @@ package org.iot.dsa.dslink.history.inMemory;
 import org.iot.dsa.dslink.history.HistoryMainNode;
 import org.iot.dsa.dslink.history.HistoryProvider;
 
+/**
+ * MainNode for running the InMemory implementation.
+ * @author Aaron Hansen
+ */
 public class MainNode extends HistoryMainNode {
 
     ///////////////////////////////////////////////////////////////////////////
@@ -23,6 +27,7 @@ public class MainNode extends HistoryMainNode {
     // Public Methods
     ///////////////////////////////////////////////////////////////////////////
 
+    @Override
     public HistoryProvider getProvider() {
         if (provider == null) {
             provider = new InMemoryProvider();

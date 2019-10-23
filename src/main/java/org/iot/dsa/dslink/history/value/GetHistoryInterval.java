@@ -1,14 +1,15 @@
-package org.iot.dsa.dslink.history;
+package org.iot.dsa.dslink.history.value;
 
-import java.util.Calendar;
 import org.iot.dsa.time.Time;
 
+import java.util.Calendar;
+
 /**
- * Interval used by the GetHistory action.
+ * Interval used by the getHistory action.
  *
  * @author Aaron Hansen
  */
-class GetHistoryInterval {
+public class GetHistoryInterval {
 
     private boolean alignDays;
     private boolean alignHours;
@@ -24,6 +25,31 @@ class GetHistoryInterval {
     private int seconds = -1;
     private int weeks = -1;
     private int years = -1;
+
+    public static GetHistoryInterval valueOf(String interval) {
+        if (interval == null
+                || interval.isEmpty()
+                || "null".equals(interval)
+                || "none".equals(interval)
+                || "default".equals(interval)) {
+            return null;
+        }
+        final GetHistoryInterval parser = new GetHistoryInterval();
+        char[] chars = interval.toCharArray();
+        StringBuilder number = new StringBuilder();
+        for (char c : chars) {
+            if (Character.isDigit(c)) {
+                number.append(c);
+            } else {
+                parser.update(c, number.toString());
+                number.delete(0, number.length());
+            }
+        }
+        if (number.length() > 0) {
+            throw new RuntimeException("Invalid expression");
+        }
+        return parser;
+    }
 
     /**
      * If configured to align to an interval, this will align the given calendar.
@@ -98,31 +124,6 @@ class GetHistoryInterval {
             modified = true;
         }
         return modified;
-    }
-
-    public static GetHistoryInterval valueOf(String interval) {
-        if (interval == null
-                || interval.isEmpty()
-                || "null".equals(interval)
-                || "none".equals(interval)
-                || "default".equals(interval)) {
-            return null;
-        }
-        final GetHistoryInterval parser = new GetHistoryInterval();
-        char[] chars = interval.toCharArray();
-        StringBuilder number = new StringBuilder();
-        for (char c : chars) {
-            if (Character.isDigit(c)) {
-                number.append(c);
-            } else {
-                parser.update(c, number.toString());
-                number.delete(0, number.length());
-            }
-        }
-        if (number.length() > 0) {
-            throw new RuntimeException("Invalid expression");
-        }
-        return parser;
     }
 
     private void check(String type, int num) {

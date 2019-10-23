@@ -1,8 +1,8 @@
 package org.iot.dsa.dslink.history;
 
-import java.util.Calendar;
-import java.util.Collection;
 import org.iot.dsa.DSRuntime;
+import org.iot.dsa.dslink.history.value.HistoryAge;
+import org.iot.dsa.dslink.history.value.HistoryInterval;
 import org.iot.dsa.node.DSBool;
 import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSInt;
@@ -10,6 +10,14 @@ import org.iot.dsa.node.DSNode;
 import org.iot.dsa.time.DSDateTime;
 import org.iot.dsa.time.Time;
 
+import java.util.Calendar;
+import java.util.Collection;
+
+/**
+ * Defines the collection strategy for all histories in the subtree.
+ *
+ * @author Aaron Hansen
+ */
 public class HistoryGroup extends AbstractHistoryNode {
 
     ///////////////////////////////////////////////////////////////////////////
@@ -20,10 +28,10 @@ public class HistoryGroup extends AbstractHistoryNode {
     // Instance Fields
     ///////////////////////////////////////////////////////////////////////////
 
-    private DSInfo cov = getInfo(COV);
-    private DSInfo interval = getInfo(INTERVAL);
-    private DSInfo maxRecordAge = getInfo(MAX_RECORD_AGE);
-    private DSInfo minCovInterval = getInfo(MIN_COV_INTERVAL);
+    private DSInfo<?> cov = getInfo(COV);
+    private DSInfo<?> interval = getInfo(INTERVAL);
+    private DSInfo<?> maxRecordAge = getInfo(MAX_RECORD_AGE);
+    private DSInfo<?> minCovInterval = getInfo(MIN_COV_INTERVAL);
     private HistoryProvider provider;
     private DSRuntime.Timer timer;
 
@@ -52,7 +60,7 @@ public class HistoryGroup extends AbstractHistoryNode {
     }
 
     @Override
-    public DSInfo getVirtualAction(DSInfo target, String name) {
+    public DSInfo<?> getVirtualAction(DSInfo<?> target, String name) {
         if (target.get() == this) {
             switch (name) {
                 case APPLY_ALIASES:
@@ -69,13 +77,13 @@ public class HistoryGroup extends AbstractHistoryNode {
     }
 
     @Override
-    public void getVirtualActions(DSInfo target, Collection<String> names) {
-        super.getVirtualActions(target, names);
+    public void getVirtualActions(DSInfo<?> target, Collection<String> names) {
         if (target.get() == this) {
             names.add(APPLY_ALIASES);
             names.add(FOLDER);
             names.add(HISTORY);
         }
+        super.getVirtualActions(target, names);
     }
 
     public boolean isCov() {
@@ -113,11 +121,19 @@ public class HistoryGroup extends AbstractHistoryNode {
         declareDefault(COV, DSBool.FALSE, "Collect Changes Of Value")
                 .getMetadata().setBooleanRange(OFF, ON);
         declareDefault(MIN_COV_INTERVAL, HistoryInterval.valueOf("10 Seconds"),
-                       "Ignore changes of value that come too fast");
+                "Ignore changes of value that come too fast");
         declareDefault(MAX_RECORDS, DSInt.valueOf(0),
-                       "If greater than zero, histories will be trimmed to this size");
+                "If greater than zero, histories will be trimmed to this size");
         declareDefault(MAX_RECORD_AGE, HistoryAge.NULL,
-                       "Records older than this will be periodically deleted");
+                "Records older than this will be periodically deleted");
+    }
+
+    @Override
+    protected void onChildChanged(DSInfo<?> child) {
+        if ((child == cov) || (child == interval) || (child == status)) {
+            scheduleCollection();
+        }
+        super.onChildChanged(child);
     }
 
     /**
@@ -130,14 +146,6 @@ public class HistoryGroup extends AbstractHistoryNode {
         time = cal.getTimeInMillis();
         Time.recycle(cal);
         collectInterval(DSDateTime.valueOf(time), this);
-    }
-
-    @Override
-    protected void onChildChanged(DSInfo child) {
-        if ((child == cov) || (child == interval) || (child == status)) {
-            scheduleCollection();
-        }
-        super.onChildChanged(child);
     }
 
     @Override
@@ -166,7 +174,7 @@ public class HistoryGroup extends AbstractHistoryNode {
         ivl.align(cal);
         ivl.apply(cal);
         long first = cal.getTimeInMillis();
-        timer = DSRuntime.run(() -> executeInterval(), first, ivl.toMillis());
+        timer = DSRuntime.run(this::executeInterval, first, ivl.toMillis());
         Time.recycle(cal);
     }
 
@@ -182,7 +190,7 @@ public class HistoryGroup extends AbstractHistoryNode {
             History h = (History) node;
             h.writeInterval(timestamp);
         } else {
-            DSInfo info = node.getFirstNodeInfo();
+            DSInfo<?> info = node.getFirstNodeInfo();
             while (info != null) {
                 collectInterval(timestamp, info.getNode());
                 info = info.nextNode();

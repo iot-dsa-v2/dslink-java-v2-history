@@ -1,4 +1,4 @@
-package org.iot.dsa.dslink.history;
+package org.iot.dsa.dslink.history.table;
 
 import org.iot.dsa.node.DSElement;
 import org.iot.dsa.rollup.DSRollup;

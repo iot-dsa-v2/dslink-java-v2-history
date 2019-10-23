@@ -2,6 +2,11 @@ package org.iot.dsa.dslink.history.inMemory;
 
 import org.iot.dsa.dslink.history.HistoryDatabase;
 
+/**
+ * Doesn't really do anything.
+ *
+ * @author Aaron Hansen
+ */
 public class InMemoryDatabase extends HistoryDatabase {
 
     ///////////////////////////////////////////////////////////////////////////

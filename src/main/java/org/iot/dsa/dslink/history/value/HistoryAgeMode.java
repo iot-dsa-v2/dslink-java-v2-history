@@ -1,18 +1,13 @@
-package org.iot.dsa.dslink.history;
+package org.iot.dsa.dslink.history.value;
+
+import org.iot.dsa.dslink.history.HistoryConstants;
+import org.iot.dsa.node.*;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.iot.dsa.node.DSElement;
-import org.iot.dsa.node.DSIEnum;
-import org.iot.dsa.node.DSIObject;
-import org.iot.dsa.node.DSIValue;
-import org.iot.dsa.node.DSList;
-import org.iot.dsa.node.DSRegistry;
-import org.iot.dsa.node.DSString;
-import org.iot.dsa.node.DSValueType;
 
 /**
- * Enum that describes a history group interval.
+ * Enum that describes a HistoryAge.
  *
  * @author Aaron Hansen
  */
@@ -29,25 +24,45 @@ public enum HistoryAgeMode implements DSIEnum, DSIValue {
     MONTHS(HistoryConstants.MONTHS),
     OFF(HistoryConstants.OFF);
 
-    private static final Map<String, HistoryAgeMode> enums = new HashMap<String, HistoryAgeMode>();
+    private static final Map<String, HistoryAgeMode> enums = new HashMap<>();
 
     ///////////////////////////////////////////////////////////////////////////
     // Instance Fields
     ///////////////////////////////////////////////////////////////////////////
 
-    private DSString element;
+    static {
+        DSRegistry.registerDecoder(HistoryAgeMode.class, OFF);
+        for (HistoryAgeMode e : HistoryAgeMode.values()) {
+            enums.put(e.name(), e);
+            enums.put(e.toString(), e);
+            enums.put(e.toString().toLowerCase(), e);
+        }
+    }
 
     ///////////////////////////////////////////////////////////////////////////
     // Constructors
     ///////////////////////////////////////////////////////////////////////////
 
-    private HistoryAgeMode(String display) {
-        this.element = DSString.valueOf(display);
-    }
+    private DSString element;
 
     ///////////////////////////////////////////////////////////////////////////
     // Public Methods
     ///////////////////////////////////////////////////////////////////////////
+
+    HistoryAgeMode(String display) {
+        this.element = DSString.valueOf(display);
+    }
+
+    /**
+     * Get an instance from a string.
+     */
+    public static HistoryAgeMode valueFor(String display) {
+        HistoryAgeMode ret = enums.get(display);
+        if (ret == null) {
+            ret = enums.get(display.toLowerCase());
+        }
+        return ret;
+    }
 
     @Override
     public DSIObject copy() {
@@ -81,22 +96,6 @@ public enum HistoryAgeMode implements DSIEnum, DSIValue {
     }
 
     @Override
-    public String toString() {
-        return element.toString();
-    }
-
-    /**
-     * Get an instance from a string.
-     */
-    public static HistoryAgeMode valueFor(String display) {
-        HistoryAgeMode ret = enums.get(display);
-        if (ret == null) {
-            ret = enums.get(display.toLowerCase());
-        }
-        return ret;
-    }
-
-    @Override
     public DSIValue valueOf(DSElement element) {
         return valueFor(element.toString());
     }
@@ -105,13 +104,9 @@ public enum HistoryAgeMode implements DSIEnum, DSIValue {
     // Initialization
     /////////////////////////////////////////////////////////////////
 
-    static {
-        DSRegistry.registerDecoder(HistoryAgeMode.class, OFF);
-        for (HistoryAgeMode e : OFF.values()) {
-            enums.put(e.name(), e);
-            enums.put(e.toString(), e);
-            enums.put(e.toString().toLowerCase(), e);
-        }
+    @Override
+    public String toString() {
+        return element.toString();
     }
 
 }

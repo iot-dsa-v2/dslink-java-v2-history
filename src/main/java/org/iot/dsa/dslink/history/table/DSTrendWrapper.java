@@ -1,4 +1,4 @@
-package org.iot.dsa.dslink.history;
+package org.iot.dsa.dslink.history.table;
 
 import org.iot.dsa.node.DSElement;
 import org.iot.dsa.node.DSIValue;
@@ -34,13 +34,18 @@ public class DSTrendWrapper implements DSITrend {
         return inner.getColumnCount();
     }
 
-    public DSITrend getInner() {
-        return inner;
-    }
-
     @Override
     public void getColumnMetadata(int index, DSMap bucket) {
         inner.getColumnMetadata(index, bucket);
+    }
+
+    @Override
+    public DSIValue getValue(int index) {
+        return inner.getValue(index);
+    }
+
+    public DSITrend getInner() {
+        return inner;
     }
 
     @Override
@@ -53,6 +58,7 @@ public class DSTrendWrapper implements DSITrend {
         return inner.getStatusColumn();
     }
 
+    @Override
     public long getTimestamp() {
         return inner.getTimestamp();
     }
@@ -65,11 +71,6 @@ public class DSTrendWrapper implements DSITrend {
     @Override
     public DSElement getValue() {
         return inner.getValue();
-    }
-
-    @Override
-    public DSIValue getValue(int index) {
-        return inner.getValue(index);
     }
 
     @Override

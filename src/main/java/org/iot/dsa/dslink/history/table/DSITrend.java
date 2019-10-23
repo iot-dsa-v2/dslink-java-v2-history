@@ -1,4 +1,4 @@
-package org.iot.dsa.dslink.history;
+package org.iot.dsa.dslink.history.table;
 
 import org.iot.dsa.node.DSElement;
 import org.iot.dsa.table.DSIResultsCursor;
@@ -12,16 +12,16 @@ import org.iot.dsa.table.DSIResultsCursor;
  */
 public interface DSITrend extends DSIResultsCursor {
 
-    public int getStatus();
+    int getStatus();
 
-    public int getStatusColumn();
+    int getStatusColumn();
 
-    public long getTimestamp();
+    long getTimestamp();
 
-    public int getTimestampColumn();
+    int getTimestampColumn();
 
-    public DSElement getValue();
+    DSElement getValue();
 
-    public int getValueColumn();
+    int getValueColumn();
 
 }

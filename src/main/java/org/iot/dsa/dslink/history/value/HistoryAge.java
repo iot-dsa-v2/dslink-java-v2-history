@@ -1,26 +1,19 @@
-package org.iot.dsa.dslink.history;
+package org.iot.dsa.dslink.history.value;
 
-import java.util.Calendar;
-import java.util.TimeZone;
 import org.iot.dsa.dslink.ActionResults;
-import org.iot.dsa.node.DSElement;
-import org.iot.dsa.node.DSInfo;
-import org.iot.dsa.node.DSInt;
-import org.iot.dsa.node.DSMap;
-import org.iot.dsa.node.DSMetadata;
-import org.iot.dsa.node.DSRegistry;
-import org.iot.dsa.node.DSString;
-import org.iot.dsa.node.DSValue;
-import org.iot.dsa.node.DSValueType;
-import org.iot.dsa.node.action.DSIActionRequest;
+import org.iot.dsa.dslink.history.HistoryConstants;
+import org.iot.dsa.node.*;
 import org.iot.dsa.node.action.DSAction;
+import org.iot.dsa.node.action.DSIActionRequest;
 import org.iot.dsa.node.action.DSISetAction;
 import org.iot.dsa.time.DSDateTime;
 import org.iot.dsa.time.Time;
 
+import java.util.Calendar;
+import java.util.TimeZone;
+
 /**
- * XML Schema compliant relative amount of time represented as a number of years, months, days,
- * hours, minutes, and seconds. The String format is -PnYnMnDTnHnMnS.
+ * Used to determine the max record age of a history.
  *
  * @author Aaron Hansen
  */
@@ -31,30 +24,61 @@ public class HistoryAge extends DSValue implements DSISetAction, HistoryConstant
     /////////////////////////////////////////////////////////////////
 
     public static HistoryAge NULL = new HistoryAge(0, HistoryAgeMode.OFF);
-    private int count = 0;
+
+    static {
+        DSRegistry.registerDecoder(HistoryAge.class, NULL);
+    }
 
     /////////////////////////////////////////////////////////////////
     // Instance Fields
     /////////////////////////////////////////////////////////////////
 
+    private int count = 0;
     private HistoryAgeMode mode;
-    private DSString string;
 
     /////////////////////////////////////////////////////////////////
     // Constructors
     /////////////////////////////////////////////////////////////////
+    private DSString string;
 
     private HistoryAge() {
     }
+
+    /////////////////////////////////////////////////////////////////
+    // Public Methods
+    /////////////////////////////////////////////////////////////////
 
     private HistoryAge(int count, HistoryAgeMode mode) {
         this.count = count;
         this.mode = mode;
     }
 
-    /////////////////////////////////////////////////////////////////
-    // Public Methods
-    /////////////////////////////////////////////////////////////////
+    /**
+     * Parses a duration using the format: &lt;n&gt; &lt;s | m | h&gt;
+     */
+    public static HistoryAge valueOf(String s) {
+        if ((s == null) || s.isEmpty() || s.equals("null")) {
+            return NULL;
+        }
+        if (s.equals(OFF)) {
+            return NULL;
+        }
+        String[] ary = s.trim().split(" ");
+        if (ary.length != 2) {
+            throw new IllegalArgumentException("Illegal interval: " + s);
+        }
+        HistoryAge ret = new HistoryAge();
+        ret.count = Integer.parseInt(ary[0]);
+        if (ret.count < 0) {
+            throw new IllegalArgumentException("Illegal interval: " + s);
+        }
+        ret.mode = HistoryAgeMode.valueFor(ary[1]);
+        ret.string = DSString.valueOf(s);
+        if ((ret.count == 0) && (ret.mode == HistoryAgeMode.OFF)) {
+            return NULL;
+        }
+        return ret;
+    }
 
     /**
      * Applies the duration to the given calendar and returns it.
@@ -86,15 +110,6 @@ public class HistoryAge extends DSValue implements DSISetAction, HistoryConstant
         return cal;
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof HistoryAge) {
-            HistoryAge d = (HistoryAge) obj;
-            return (d.count == count) && (d.mode == mode);
-        }
-        return false;
-    }
-
     /**
      * Applies the age to the current time.
      */
@@ -120,17 +135,8 @@ public class HistoryAge extends DSValue implements DSISetAction, HistoryConstant
     }
 
     @Override
-    public int hashCode() {
-        return toString().hashCode();
-    }
-
-    @Override
     public boolean isNull() {
         return this == NULL;
-    }
-
-    public boolean isOff() {
-        return mode == HistoryAgeMode.OFF;
     }
 
     @Override
@@ -140,6 +146,40 @@ public class HistoryAge extends DSValue implements DSISetAction, HistoryConstant
         }
         return string;
     }
+
+    @Override
+    public HistoryAge valueOf(DSElement element) {
+        if ((element == null) || element.isNull()) {
+            return NULL;
+        }
+        return valueOf(element.toString());
+    }
+
+    @Override
+    public int hashCode() {
+        return toString().hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof HistoryAge) {
+            HistoryAge d = (HistoryAge) obj;
+            return (d.count == count) && (d.mode == mode);
+        }
+        return false;
+    }
+
+    public boolean isOff() {
+        return mode == HistoryAgeMode.OFF;
+    }
+
+    /////////////////////////////////////////////////////////////////
+    // Private Methods
+    /////////////////////////////////////////////////////////////////
+
+    /////////////////////////////////////////////////////////////////
+    // Inner Classes
+    /////////////////////////////////////////////////////////////////
 
     /**
      * String representation of this duration.
@@ -161,65 +201,31 @@ public class HistoryAge extends DSValue implements DSISetAction, HistoryConstant
         return string.toString();
     }
 
-    @Override
-    public HistoryAge valueOf(DSElement element) {
-        if ((element == null) || element.isNull()) {
-            return NULL;
-        }
-        return valueOf(element.toString());
-    }
-
-    /**
-     * Parses a duration using the format: &lt;n&gt; &lt;s | m | h&gt;
-     */
-    public static HistoryAge valueOf(String s) {
-        if ((s == null) || s.isEmpty() || s.equals("null")) {
-            return NULL;
-        }
-        if (s.equals(OFF)) {
-            return NULL;
-        }
-        String[] ary = s.trim().split(" ");
-        if (ary.length != 2) {
-            throw new IllegalArgumentException("Illegal interval: " + s);
-        }
-        HistoryAge ret = new HistoryAge();
-        ret.count = Integer.parseInt(ary[0]);
-        if (ret.count < 0) {
-            throw new IllegalArgumentException("Illegal interval: " + s);
-        }
-        ret.mode = HistoryAgeMode.valueFor(ary[1]);
-        ret.string = DSString.valueOf(s);
-        if ((ret.count == 0) && (ret.mode == HistoryAgeMode.OFF)) {
-            return NULL;
-        }
-        return ret;
-    }
-
     /////////////////////////////////////////////////////////////////
-    // Private Methods
-    /////////////////////////////////////////////////////////////////
-
-    /////////////////////////////////////////////////////////////////
-    // Inner Classes
+    // Initialization
     /////////////////////////////////////////////////////////////////
 
     public static class SetAction extends DSAction {
 
         public static final SetAction INSTANCE = new SetAction();
 
+        {
+            addParameter(COUNT, DSInt.NULL, null);
+            addParameter(MODE, HistoryAgeMode.OFF, "Units");
+        }
+
         @Override
         public ActionResults invoke(DSIActionRequest req) {
             int val = req.getParameters().getInt(COUNT);
             HistoryAgeMode mode = HistoryAgeMode
                     .valueFor(req.getParameters().getString(MODE));
-            DSInfo target = req.getTargetInfo();
+            DSInfo<?> target = req.getTargetInfo();
             target.getParent().put(target, new HistoryAge(val, mode));
             return null;
         }
 
         @Override
-        public void prepareParameter(DSInfo target, DSMap parameter) {
+        public void prepareParameter(DSInfo<?> target, DSMap parameter) {
             HistoryAge node = (HistoryAge) target.get();
             if (parameter.get(DSMetadata.NAME).equals(COUNT)) {
                 parameter.put(DSMetadata.DEFAULT, node.count);
@@ -227,19 +233,6 @@ public class HistoryAge extends DSValue implements DSISetAction, HistoryConstant
                 parameter.put(DSMetadata.DEFAULT, node.mode.toElement());
             }
         }
-
-        {
-            addParameter(COUNT, DSInt.NULL, null);
-            addParameter(MODE, HistoryAgeMode.OFF, "Units");
-        }
-    }
-
-    /////////////////////////////////////////////////////////////////
-    // Initialization
-    /////////////////////////////////////////////////////////////////
-
-    static {
-        DSRegistry.registerDecoder(HistoryAge.class, NULL);
     }
 
 }

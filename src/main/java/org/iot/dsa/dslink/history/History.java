@@ -1,35 +1,20 @@
 package org.iot.dsa.dslink.history;
 
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.TimeZone;
+import org.iot.dsa.DSRuntime;
 import org.iot.dsa.dslink.Action.ResultsType;
-import org.iot.dsa.dslink.ActionResults;
-import org.iot.dsa.dslink.AsyncActionResults;
-import org.iot.dsa.dslink.DSIRequester;
-import org.iot.dsa.dslink.DSLink;
-import org.iot.dsa.dslink.DSLinkConnection;
+import org.iot.dsa.dslink.*;
+import org.iot.dsa.dslink.history.table.DSDeltaTrend;
+import org.iot.dsa.dslink.history.table.DSITrend;
+import org.iot.dsa.dslink.history.table.EndTrend;
+import org.iot.dsa.dslink.history.table.GetHistoryIntervalTrend;
+import org.iot.dsa.dslink.history.value.GetHistoryInterval;
+import org.iot.dsa.dslink.history.value.HistoryAge;
+import org.iot.dsa.dslink.history.value.HistoryType;
 import org.iot.dsa.dslink.requester.AbstractListHandler;
 import org.iot.dsa.dslink.requester.AbstractSubscribeHandler;
 import org.iot.dsa.dslink.requester.ErrorType;
 import org.iot.dsa.dslink.requester.SimpleRequestHandler;
-import org.iot.dsa.node.DSBool;
-import org.iot.dsa.node.DSBytes;
-import org.iot.dsa.node.DSDouble;
-import org.iot.dsa.node.DSElement;
-import org.iot.dsa.node.DSElementType;
-import org.iot.dsa.node.DSIValue;
-import org.iot.dsa.node.DSInfo;
-import org.iot.dsa.node.DSInt;
-import org.iot.dsa.node.DSList;
-import org.iot.dsa.node.DSLong;
-import org.iot.dsa.node.DSMap;
-import org.iot.dsa.node.DSNode;
-import org.iot.dsa.node.DSPath;
-import org.iot.dsa.node.DSStatus;
-import org.iot.dsa.node.DSString;
+import org.iot.dsa.node.*;
 import org.iot.dsa.node.action.DSAction;
 import org.iot.dsa.node.action.DSIActionRequest;
 import org.iot.dsa.node.event.DSEvent;
@@ -42,6 +27,13 @@ import org.iot.dsa.time.DSTimezone;
 import org.iot.dsa.time.Time;
 import org.iot.dsa.util.DSException;
 
+import java.util.*;
+
+/**
+ * Represents the history for a single data point and its meta-data.
+ *
+ * @author Aaron Hansen
+ */
 public class History extends AbstractHistoryNode {
 
     ///////////////////////////////////////////////////////////////////////////
@@ -50,9 +42,6 @@ public class History extends AbstractHistoryNode {
 
     public static final String NEW_RECORD = "NEW_RECORD";
     public static final DSEvent NEW_RECORD_EVENT = new DSEvent(NEW_RECORD);
-
-    private static final GetHistoryAction GET_HISTORY_ACTION = new GetHistoryAction();
-
     static final String GET_HISTORY = "getHistory";
     static final String GET_HISTORY_ALIAS = "@@getHistory";
     static final String INTERVAL = "Interval";
@@ -62,21 +51,21 @@ public class History extends AbstractHistoryNode {
     static final String TIMESTAMP = "timestamp";
     static final String TIMERANGE = "Timerange";
     static final String VALUE = "value";
+    private static final GetHistoryAction GET_HISTORY_ACTION = new GetHistoryAction();
 
     ///////////////////////////////////////////////////////////////////////////
     // Instance Fields
     ///////////////////////////////////////////////////////////////////////////
-
     private DSDateTime firstTs;
     private HistoryGroup group;
     private DSDateTime lastTs;
     private HistoryProvider provider;
-    private DSInfo recordCount = getInfo(RECORD_COUNT);
+    private DSInfo<?> recordCount = getInfo(RECORD_COUNT);
     private MySubscription subscription;
     private DSElementType type;
-    private DSInfo watchSts = getInfo(WATCH_STATUS);
-    private DSInfo watchTs = getInfo(WATCH_TS);
-    private DSInfo watchVal = getInfo(WATCH_VALUE);
+    private DSInfo<?> watchSts = getInfo(WATCH_STATUS);
+    private DSInfo<?> watchTs = getInfo(WATCH_TS);
+    private DSInfo<?> watchVal = getInfo(WATCH_VALUE);
 
     ///////////////////////////////////////////////////////////////////////////
     // Public Methods
@@ -101,20 +90,22 @@ public class History extends AbstractHistoryNode {
     }
 
     @Override
-    public DSInfo getVirtualAction(DSInfo target, String name) {
-        switch (name) {
-            case APPLY_ALIAS:
-                return virtualInfo(APPLY_ALIAS, HistoryUtils.writeAliases);
-            case DELETE:
-                return virtualInfo(DELETE, HistoryUtils.deleteNodeData);
-            case GET_HISTORY:
-                return virtualInfo(GET_HISTORY, GET_HISTORY_ACTION);
+    public DSInfo<?> getVirtualAction(DSInfo<?> target, String name) {
+        if (target.get() == this) {
+            switch (name) {
+                case APPLY_ALIAS:
+                    return virtualInfo(APPLY_ALIAS, HistoryUtils.writeAliases);
+                case DELETE:
+                    return virtualInfo(DELETE, HistoryUtils.deleteNodeData);
+                case GET_HISTORY:
+                    return virtualInfo(GET_HISTORY, GET_HISTORY_ACTION);
+            }
         }
         return super.getVirtualAction(target, name);
     }
 
     @Override
-    public void getVirtualActions(DSInfo target, Collection<String> names) {
+    public void getVirtualActions(DSInfo<?> target, Collection<String> names) {
         super.getVirtualActions(target, names);
         if (target.get() == this) {
             names.add(APPLY_ALIAS);
@@ -149,7 +140,7 @@ public class History extends AbstractHistoryNode {
                     if (oldest.isAfter(first)) {
                         modified = true;
                         first = getProvider().purge(this,
-                                                    DSTimeRange.valueOf(DSDateTime.NULL, oldest));
+                                DSTimeRange.valueOf(DSDateTime.NULL, oldest));
                         if (first != null) {
                             firstTs = first;
                             put(FIRST_TS, first);
@@ -165,10 +156,6 @@ public class History extends AbstractHistoryNode {
         }
     }
 
-    public boolean isTotalized() {
-        return getElement(TOTALIZED).toBoolean();
-    }
-
     /**
      * Writes the alias.
      */
@@ -179,6 +166,10 @@ public class History extends AbstractHistoryNode {
         } else {
             writeAliasSafe();
         }
+    }
+
+    public boolean isTotalized() {
+        return getElement(TOTALIZED).toBoolean();
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -212,9 +203,21 @@ public class History extends AbstractHistoryNode {
                 .setLocked(true)
                 .getMetadata().setDescription("Number of record in the database");
         declareDefault(TOTALIZED, DSBool.FALSE,
-                       "True means the value represents an accumulation (ever increasing slope)");
+                "True means the value represents an accumulation (ever increasing slope)");
         declareDefault(TIMEZONE, DSTimezone.DEFAULT, "Timezone of the data source.");
         //TODO UNITS
+    }
+
+    @Override
+    protected void onChildChanged(DSInfo<?> info) {
+        if (info == status) {
+            if (!getStatus().isGood()) {
+                lastTs = null;
+            } else if (lastTs == null) {
+                writeStart();
+            }
+        }
+        super.onChildChanged(info);
     }
 
     /**
@@ -261,7 +264,7 @@ public class History extends AbstractHistoryNode {
                 range = DSTimeRange.valueOf(start, range.getTo());
             }
         }
-        DSITrend trend = null;
+        DSITrend trend;
         boolean cov = getGroup().isCov();
         if (cov) {
             trend = getProvider().getTrendCov(this, range.getStart());
@@ -283,24 +286,16 @@ public class History extends AbstractHistoryNode {
         return get(WATCH_PATH).toString();
     }
 
+    protected void setWatchPath(String path) {
+        put(WATCH_PATH, DSString.valueOf(path));
+    }
+
     protected DSStatus getWatchStatus() {
         return (DSStatus) watchSts.get();
     }
 
     protected DSElement getWatchValue() {
         return watchVal.getElement();
-    }
-
-    @Override
-    protected void onChildChanged(DSInfo info) {
-        if (info == status) {
-            if (!getStatus().isGood()) {
-                lastTs = null;
-            } else if (lastTs == null) {
-                writeStart();
-            }
-        }
-        super.onChildChanged(info);
     }
 
     @Override
@@ -324,17 +319,17 @@ public class History extends AbstractHistoryNode {
     }
 
     @Override
-    protected void onStarted() {
-        group = null;
-        getProvider().init(this);
-        super.onStarted();
-    }
-
-    @Override
     protected void onStopped() {
         lastTs = null;
         unsubscribe();
         super.onStopped();
+    }
+
+    @Override
+    protected void onStarted() {
+        group = null;
+        getProvider().init(this);
+        super.onStarted();
     }
 
     protected void removeAlias() {
@@ -409,7 +404,6 @@ public class History extends AbstractHistoryNode {
                         DSList list = value.toList();
                         int idx = list.indexOf(oldPath);
                         if (idx >= 0) {
-                            DSString dspath = DSString.valueOf(path);
                             list.put(idx, DSString.valueOf(path));
                             writeAlias(list);
                         }
@@ -419,17 +413,13 @@ public class History extends AbstractHistoryNode {
         });
     }
 
-    protected void setWatchPath(String path) {
-        put(WATCH_PATH, DSString.valueOf(path));
-    }
-
     protected void subscribe() {
         DSLink link = (DSLink) getAncestor(DSLink.class);
         DSLinkConnection conn = link.getConnection();
         if (conn.isConnected()) {
             subscription = (MySubscription) conn.getRequester().subscribe(getWatchPath(),
-                                                                          DSInt.valueOf(0),
-                                                                          new MySubscription());
+                    DSInt.valueOf(0),
+                    new MySubscription());
         }
     }
 
@@ -455,7 +445,8 @@ public class History extends AbstractHistoryNode {
             return;
         }
         if (type == null) {
-            DSInfo info = getInfo(WATCH_TYPE);
+            DSInfo<?> info = getInfo(WATCH_TYPE);
+            //TODO Add check to see if type is supported
             HistoryType htype = (HistoryType) info.get();
             if (htype.isUnknown()) {
                 htype = HistoryType.valueFor(value);
@@ -480,12 +471,13 @@ public class History extends AbstractHistoryNode {
                 case DOUBLE:
                     value = DSDouble.NULL.valueOf(value);
                     break;
-                //case LIST: //TODO
+                //case LIST: //TODO - Should we support this?
                 //value = DSList.NULL.valueOf(value);
                 //break;
                 case LONG:
+                    value = DSLong.NULL.valueOf(value);
                     break;
-                //case MAP: //TODO
+                //case MAP: //TODO - Should we support this?
                 //value = DSMap.NULL.valueOf(value);
                 //break;
                 case STRING:
@@ -630,8 +622,11 @@ public class History extends AbstractHistoryNode {
         protected GetHistory(History history, DSIActionRequest request) {
             this.history = history;
             this.request = request;
-            this.trend = history.getHistory(request);
             realTime = request.getParameters().get(REAL_TIME, false);
+            DSRuntime.run(() -> {
+                this.trend = history.getHistory(request);
+                request.sendResults();
+            });
         }
 
         @Override
@@ -652,8 +647,7 @@ public class History extends AbstractHistoryNode {
                 }
             } else {
                 synchronized (this) {
-                    DSList list = updates.remove(0);
-                    row.addAll(list);
+                    row.addAll(updates.remove(0));
                 }
             }
         }
@@ -668,7 +662,7 @@ public class History extends AbstractHistoryNode {
             boolean ret = false;
             if (trend != null) {
                 ret = trend.next();
-                if (ret == false) {
+                if (!ret) {
                     if (realTime) {
                         subscription = history.subscribe(this, NEW_RECORD_EVENT, null);
                         trend = null;
@@ -694,19 +688,27 @@ public class History extends AbstractHistoryNode {
         }
 
         @Override
-        public synchronized void onEvent(DSEvent event, DSNode node, DSInfo child, DSIValue data) {
+        public synchronized void onEvent(DSEvent event, DSNode node, DSInfo<?> child, DSIValue data) {
             if (updates == null) {
                 updates = new LinkedList<>();
             }
             updates.add(new DSList().add(history.getLastWrite().toElement())
-                                    .add(history.getWatchValue())
-                                    .add(history.getWatchStatus().toElement()));
+                    .add(history.getWatchValue())
+                    .add(history.getWatchStatus().toElement()));
             request.sendResults();
         }
 
     }
 
     private static class GetHistoryAction extends DSAction {
+
+        {
+            addParameter(TIMERANGE, DSTimeRange.NULL, null);
+            addDefaultParameter(INTERVAL, DSString.valueOf("none"), null);
+            addDefaultParameter(ROLLUP, DSRollup.FIRST, null);
+            addDefaultParameter(REAL_TIME, DSBool.FALSE, null);
+            setResultsType(ResultsType.STREAM);
+        }
 
         public GetHistoryAction() {
         }
@@ -717,20 +719,13 @@ public class History extends AbstractHistoryNode {
             return new GetHistory(h, request);
         }
 
-        @Override
-        public void prepareParameter(DSInfo target, DSMap parameter) {
-        }
-
-        {
-            addParameter(TIMERANGE, DSTimeRange.NULL, null);
-            addDefaultParameter(INTERVAL, DSString.valueOf("none"), null);
-            addDefaultParameter(ROLLUP, DSRollup.FIRST, null);
-            addDefaultParameter(REAL_TIME, DSBool.FALSE, null);
-            setResultsType(ResultsType.STREAM);
-        }
     }
 
     private class MySubscription extends AbstractSubscribeHandler {
+
+        {
+            lastTs = null;
+        }
 
         @Override
         public void onClose() {
@@ -753,10 +748,6 @@ public class History extends AbstractHistoryNode {
                 error(getPath(), x);
                 updateStatus(DSException.makeMessage(x));
             }
-        }
-
-        {
-            lastTs = null;
         }
     }
 

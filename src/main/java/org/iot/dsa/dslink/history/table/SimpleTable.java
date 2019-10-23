@@ -1,11 +1,12 @@
-package org.iot.dsa.dslink.history;
+package org.iot.dsa.dslink.history.table;
 
-import java.util.Iterator;
 import org.iot.dsa.node.DSIValue;
 import org.iot.dsa.node.DSMap;
 import org.iot.dsa.node.DSMetadata;
 import org.iot.dsa.node.DSValueType;
 import org.iot.dsa.table.DSIResultsCursor;
+
+import java.util.Iterator;
 
 /**
  * A very simple table that holds all rows in memory, primarily for testing but could be used

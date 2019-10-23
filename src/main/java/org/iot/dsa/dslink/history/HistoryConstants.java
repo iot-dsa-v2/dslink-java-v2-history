@@ -4,51 +4,56 @@ import org.iot.dsa.node.DSFlexEnum;
 import org.iot.dsa.node.DSList;
 import org.iot.dsa.node.action.DeleteAction;
 
+/**
+ * Constants used by multiple classes.
+ *
+ * @author Aaron Hansen
+ */
 public interface HistoryConstants {
 
-    public static final String APPLY_ALIAS = "Apply Alias";
-    public static final String APPLY_ALIASES = "Apply Aliases";
-    public static final String COUNT = "Count";
-    public static final String COV = "COV";
-    public static final String DAYS = "Days";
-    public static final String DELETE = DeleteAction.DELETE;
-    public static final String FIRST_TS = "First Timestamp";
-    public static final String FOLDER = "Folder";
-    public static final String FORCE_OVERWRITE = "Force Overwrite";
-    public static final String HISTORY = "History";
-    public static final String HISTORY_GROUP = "History Group";
-    public static final String HOURS = "Hours";
-    public static final String INTERVAL = "Interval";
-    public static final String LAST_TS = "Last Timestamp";
-    public static final String MAX_RECORDS = "Max Records";
-    public static final String MAX_RECORD_AGE = "Max Record Age";
-    public static final String MILLIS = "Millis";
-    public static final String MIN_COV_INTERVAL = "Min COV Interval";
-    public static final String MINUTES = "Minutes";
-    public static final String MODE = "Mode";
-    public static final String MONTHS = "Months";
-    public static final String NAME = "Name";
-    public static final String NODE_ONLY = "Node Only";
-    public static final String NODE_AND_DATA = "Node and Data";
-    public static final String OFF = "Off";
-    public static final String ON = "On";
-    public static final String PURGE = "Purge";
-    public static final String SECONDS = "Seconds";
-    public static final String SET = "Set";
-    public static final String RECORD_COUNT = "Record Count";
-    public static final String TIME_RANGE = "Time Range";
-    public static final String TOTALIZED = "Totalized";
-    public static final String VALUE = "Value";
-    public static final String WATCH_PATH = "Watch Path";
-    public static final String WATCH_STATUS = "Watch Status";
-    public static final String WATCH_TS = "Watch Timestamp";
-    public static final String WATCH_TYPE = "Watch Type";
-    public static final String WATCH_VALUE = "Watch Value";
-    public static final String WEEKS = "Weeks";
-    public static final String UNITS = "Units";
-    public static final String TIMEZONE = "Timezone";
+    String APPLY_ALIAS = "Apply Alias";
+    String APPLY_ALIASES = "Apply Aliases";
+    String COUNT = "Count";
+    String COV = "COV";
+    String DAYS = "Days";
+    String DELETE = DeleteAction.DELETE;
+    String FIRST_TS = "First Timestamp";
+    String FOLDER = "Folder";
+    String FORCE_OVERWRITE = "Force Overwrite";
+    String HISTORY = "History";
+    String HISTORY_GROUP = "History Group";
+    String HOURS = "Hours";
+    String INTERVAL = "Interval";
+    String LAST_TS = "Last Timestamp";
+    String MAX_RECORDS = "Max Records";
+    String MAX_RECORD_AGE = "Max Record Age";
+    String MILLIS = "Millis";
+    String MIN_COV_INTERVAL = "Min COV Interval";
+    String MINUTES = "Minutes";
+    String MODE = "Mode";
+    String MONTHS = "Months";
+    String NAME = "Name";
+    String NODE_ONLY = "Node Only";
+    String NODE_AND_DATA = "Node and Data";
+    String OFF = "Off";
+    String ON = "On";
+    String PURGE = "Purge";
+    String SECONDS = "Seconds";
+    String SET = "Set";
+    String RECORD_COUNT = "Record Count";
+    String TIME_RANGE = "Time Range";
+    String TOTALIZED = "Totalized";
+    String VALUE = "Value";
+    String WATCH_PATH = "Watch Path";
+    String WATCH_STATUS = "Watch Status";
+    String WATCH_TS = "Watch Timestamp";
+    String WATCH_TYPE = "Watch Type";
+    String WATCH_VALUE = "Watch Value";
+    String WEEKS = "Weeks";
+    String UNITS = "Units";
+    String TIMEZONE = "Timezone";
 
-    public static final DSFlexEnum DELETE_MODE = DSFlexEnum.valueOf(NODE_ONLY, DSList.valueOf(
+    DSFlexEnum DELETE_MODE = DSFlexEnum.valueOf(NODE_ONLY, DSList.valueOf(
             NODE_ONLY, NODE_AND_DATA));
 
 }

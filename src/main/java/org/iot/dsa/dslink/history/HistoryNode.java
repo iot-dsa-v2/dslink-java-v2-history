@@ -10,17 +10,17 @@ import org.iot.dsa.time.DSTimeRange;
  */
 public interface HistoryNode {
 
-    public default void houseKeeping() {
+    default void houseKeeping() {
     }
 
     /**
      * Delete data from the given time range.
      */
-    public default void purge(DSTimeRange range) {
+    default void purge(DSTimeRange range) {
         DSNode node = toNode();
         HistoryUtils.getProvider(node.getInfo()).purge(node, range);
     }
 
-    public DSNode toNode();
+    DSNode toNode();
 
 }

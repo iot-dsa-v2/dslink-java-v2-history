@@ -1,13 +1,16 @@
 package org.iot.dsa.dslink.history;
 
-import org.iot.dsa.node.DSElement;
-import org.iot.dsa.node.DSInfo;
-import org.iot.dsa.node.DSMap;
-import org.iot.dsa.node.DSNode;
-import org.iot.dsa.node.DSStatus;
+import org.iot.dsa.dslink.history.table.CovStartTrend;
+import org.iot.dsa.dslink.history.table.DSITrend;
+import org.iot.dsa.node.*;
 import org.iot.dsa.time.DSDateTime;
 import org.iot.dsa.time.DSTimeRange;
 
+/**
+ * Base class for binding an implementation to a specific type of database.
+ *
+ * @author Aaron Hansen
+ */
 public abstract class HistoryProvider implements HistoryConstants {
 
     ///////////////////////////////////////////////////////////////////////////
@@ -137,7 +140,7 @@ public abstract class HistoryProvider implements HistoryConstants {
             h.put(RECORD_COUNT, getRecordCount(h));
             return;
         }
-        DSInfo info = node.getFirstNodeInfo();
+        DSInfo<?> info = node.getFirstNodeInfo();
         while (info != null) {
             purge(info.getNode(), range);
             info = info.nextNode();

@@ -1,10 +1,16 @@
 package org.iot.dsa.dslink.history;
 
-import java.util.Collection;
 import org.iot.dsa.conn.DSConnection;
 import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSNode;
 
+import java.util.Collection;
+
+/**
+ * Abstract representation of a connection(s) to a database.
+ *
+ * @author Aaron Hansen
+ */
 public abstract class HistoryDatabase extends DSConnection implements HistoryConstants,
         HistoryNode {
 
@@ -13,7 +19,7 @@ public abstract class HistoryDatabase extends DSConnection implements HistoryCon
     ///////////////////////////////////////////////////////////////////////////
 
     @Override
-    public DSInfo getVirtualAction(DSInfo target, String name) {
+    public DSInfo<?> getVirtualAction(DSInfo<?> target, String name) {
         if (target.get() == this) {
             switch (name) {
                 case DELETE:
@@ -28,16 +34,18 @@ public abstract class HistoryDatabase extends DSConnection implements HistoryCon
     }
 
     @Override
-    public void getVirtualActions(DSInfo target, Collection<String> names) {
+    public void getVirtualActions(DSInfo<?> target, Collection<String> names) {
         super.getVirtualActions(target, names);
-        names.add(HISTORY_GROUP);
-        names.add(FOLDER);
+        if (target.get() == this) {
+            names.add(HISTORY_GROUP);
+            names.add(FOLDER);
+        }
     }
 
     @Override
     public void houseKeeping() {
         HistoryNode node;
-        DSInfo info = getFirstInfo(HistoryNode.class);
+        DSInfo<?> info = getFirstInfo(HistoryNode.class);
         while (info != null) {
             node = (HistoryNode) info.get();
             node.houseKeeping();

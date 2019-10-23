@@ -1,13 +1,9 @@
-package org.iot.dsa.dslink.history;
+package org.iot.dsa.dslink.history.table;
+
+import org.iot.dsa.node.*;
+import org.iot.dsa.time.DSDateTime;
 
 import java.util.Iterator;
-import org.iot.dsa.node.DSElement;
-import org.iot.dsa.node.DSIMetadata;
-import org.iot.dsa.node.DSIValue;
-import org.iot.dsa.node.DSMap;
-import org.iot.dsa.node.DSMetadata;
-import org.iot.dsa.node.DSStatus;
-import org.iot.dsa.time.DSDateTime;
 
 /**
  * A very simple trend that holds all rows in memory, primarily for testing but could be used
@@ -64,6 +60,11 @@ public class SimpleTrend extends AbstractTable {
         }
 
         @Override
+        public DSIValue getValue(int index) {
+            return row[index];
+        }
+
+        @Override
         public int getStatus() {
             DSStatus s = (DSStatus) row[2];
             return s.getBits();
@@ -88,11 +89,6 @@ public class SimpleTrend extends AbstractTable {
         @Override
         public DSElement getValue() {
             return row[1].toElement();
-        }
-
-        @Override
-        public DSIValue getValue(int index) {
-            return row[index];
         }
 
         @Override

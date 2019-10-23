@@ -1,15 +1,16 @@
 package org.iot.dsa.dslink.history;
 
 import org.iot.dsa.dslink.ActionResults;
-import org.iot.dsa.node.DSBool;
-import org.iot.dsa.node.DSInfo;
-import org.iot.dsa.node.DSMap;
-import org.iot.dsa.node.DSNode;
-import org.iot.dsa.node.DSString;
+import org.iot.dsa.node.*;
 import org.iot.dsa.node.action.DSAction;
 import org.iot.dsa.node.action.DSIActionRequest;
 import org.iot.dsa.time.DSTimeRange;
 
+/**
+ * Commonly used actions and functions.
+ *
+ * @author Aaron Hansen
+ */
 class HistoryUtils implements HistoryConstants {
 
     ///////////////////////////////////////////////////////////////////////////
@@ -17,10 +18,16 @@ class HistoryUtils implements HistoryConstants {
     ///////////////////////////////////////////////////////////////////////////
 
     public static DSAction deleteNodeData = new DSAction() {
+        {
+            setActionGroup(DSAction.EDIT_GROUP);
+            addDefaultParameter(DELETE, DELETE_MODE,
+                    "Delete only the node or the node and all backing data");
+        }
+
         @Override
         public ActionResults invoke(DSIActionRequest req) {
             String arg = req.getParameters().getString(DELETE);
-            DSInfo target = req.getTargetInfo();
+            DSInfo<?> target = req.getTargetInfo();
             if (NODE_AND_DATA.equals(arg)) {
                 HistoryNode historyNode = (HistoryNode) target.get();
                 historyNode.purge(DSTimeRange.NULL);
@@ -28,35 +35,35 @@ class HistoryUtils implements HistoryConstants {
             target.getParent().remove(target);
             return null;
         }
-
-        {
-            setActionGroup(DSAction.EDIT_GROUP);
-            addDefaultParameter(DELETE, DELETE_MODE,
-                                "Delete only the node or the node and all backing data");
-        }
     };
 
     public static DSAction newGroupFolder = new DSAction() {
+        {
+            setActionGroup(DSAction.NEW_GROUP);
+            addParameter(NAME, DSString.NULL, "Node name");
+        }
+
         @Override
         public ActionResults invoke(DSIActionRequest req) {
-            DSInfo target = req.getTargetInfo();
+            DSInfo<?> target = req.getTargetInfo();
             HistoryProvider provider = HistoryUtils.getProvider(target);
             target.getNode().add(
                     req.getParameters().getString(NAME),
                     provider.makeGroupFolder(req.getParameters()));
             return null;
         }
-
-        {
-            setActionGroup(DSAction.NEW_GROUP);
-            addParameter(NAME, DSString.NULL, "Node name");
-        }
     };
 
     public static DSAction newHistory = new DSAction() {
+        {
+            setActionGroup(DSAction.NEW_GROUP);
+            addParameter(NAME, DSString.NULL, "Node name").setPlaceHolder("Optional");
+            addParameter(WATCH_PATH, DSString.NULL, "Subscription path").setPlaceHolder("Required");
+        }
+
         @Override
         public ActionResults invoke(DSIActionRequest req) {
-            DSInfo target = req.getTargetInfo();
+            DSInfo<?> target = req.getTargetInfo();
             HistoryProvider provider = HistoryUtils.getProvider(target);
             DSMap params = req.getParameters();
             String name = params.getString(NAME);
@@ -76,49 +83,48 @@ class HistoryUtils implements HistoryConstants {
             target.getNode().add(name, his);
             return null;
         }
-
-        {
-            setActionGroup(DSAction.NEW_GROUP);
-            addParameter(NAME, DSString.NULL, "Node name").setPlaceHolder("Optional");
-            addParameter(WATCH_PATH, DSString.NULL, "Subscription path").setPlaceHolder("Required");
-        }
     };
 
     public static DSAction newHistoryFolder = new DSAction() {
+        {
+            setActionGroup(DSAction.NEW_GROUP);
+            addParameter(NAME, DSString.NULL, "Node name");
+        }
+
         @Override
         public ActionResults invoke(DSIActionRequest req) {
-            DSInfo target = req.getTargetInfo();
+            DSInfo<?> target = req.getTargetInfo();
             HistoryProvider provider = HistoryUtils.getProvider(target);
             target.getNode().add(
                     req.getParameters().getString(NAME),
                     provider.makeHistoryFolder(req.getParameters()));
             return null;
         }
+    };
 
+    public static DSAction newHistoryGroup = new DSAction() {
         {
             setActionGroup(DSAction.NEW_GROUP);
             addParameter(NAME, DSString.NULL, "Node name");
         }
-    };
 
-    public static DSAction newHistoryGroup = new DSAction() {
         @Override
         public ActionResults invoke(DSIActionRequest req) {
-            DSInfo target = req.getTargetInfo();
+            DSInfo<?> target = req.getTargetInfo();
             HistoryProvider provider = HistoryUtils.getProvider(target);
             target.getNode().add(
                     req.getParameters().getString(NAME),
                     provider.makeGroupNode(req.getParameters()));
             return null;
         }
-
-        {
-            setActionGroup(DSAction.NEW_GROUP);
-            addParameter(NAME, DSString.NULL, "Node name");
-        }
     };
 
     public static DSAction purge = new DSAction() {
+        {
+            addParameter(TIME_RANGE, DSTimeRange.NULL,
+                    "Delete records with timestamps in this range");
+        }
+
         @Override
         public ActionResults invoke(DSIActionRequest req) {
             HistoryNode node = (HistoryNode) req.getTarget();
@@ -127,25 +133,20 @@ class HistoryUtils implements HistoryConstants {
             node.purge(timeRange);
             return null;
         }
-
-        {
-            addParameter(TIME_RANGE, DSTimeRange.NULL,
-                         "Delete records with timestamps in this range");
-        }
     };
 
     public static DSAction writeAliases = new DSAction() {
+        {
+            addDefaultParameter(FORCE_OVERWRITE, DSBool.FALSE,
+                    "Overwrite existing aliases to other nodes");
+        }
+
         @Override
         public ActionResults invoke(DSIActionRequest req) {
             AbstractHistoryNode node = (AbstractHistoryNode) req.getTarget();
             boolean force = req.getParameters().get(FORCE_OVERWRITE, false);
             node.writeAliases(force);
             return null;
-        }
-
-        {
-            addDefaultParameter(FORCE_OVERWRITE, DSBool.FALSE,
-                                "Overwrite existing aliases to other nodes");
         }
     };
 
@@ -160,7 +161,7 @@ class HistoryUtils implements HistoryConstants {
     // Public Methods
     ///////////////////////////////////////////////////////////////////////////
 
-    public static HistoryDatabase getDatabase(DSInfo target) {
+    public static HistoryDatabase getDatabase(DSInfo<?> target) {
         DSNode node = target.getParent();
         if (target.isNode()) {
             node = target.getNode();
@@ -174,7 +175,7 @@ class HistoryUtils implements HistoryConstants {
         return null;
     }
 
-    public static HistoryGroup getGroup(DSInfo target) {
+    public static HistoryGroup getGroup(DSInfo<?> target) {
         DSNode node = target.getParent();
         if (target.isNode()) {
             node = target.getNode();
@@ -188,7 +189,7 @@ class HistoryUtils implements HistoryConstants {
         return null;
     }
 
-    public static HistoryMainNode getMain(DSInfo target) {
+    public static HistoryMainNode getMain(DSInfo<?> target) {
         DSNode node = target.getParent();
         if (target.isNode()) {
             node = target.getNode();
@@ -202,7 +203,7 @@ class HistoryUtils implements HistoryConstants {
         return null;
     }
 
-    public static HistoryProvider getProvider(DSInfo target) {
+    public static HistoryProvider getProvider(DSInfo<?> target) {
         HistoryMainNode node = getMain(target);
         if (node == null) {
             return null;
